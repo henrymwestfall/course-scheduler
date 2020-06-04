@@ -1,6 +1,11 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
 from enum import Enum
-from individual import Teacher, Student, Individual
-from schedule import Schedule
+if TYPE_CHECKING:
+    from individual import Teacher, Student, Individual
+    from schedule import Schedule
+
+
 # Defines classes relating to courses and sections.
 # Courses represent an unscheduled verion of a generic class containing information regarding how it might be structured
 # Section represents a scheduled version of a generic class containing information about the specific scheduled instance.
@@ -17,6 +22,7 @@ class Course:
         self.potentialPeriods = []
         self.reqTotalStudents = 0
         self.courseType = CourseType
+
 
     def __eq__(self, other) -> bool:
         """
@@ -96,8 +102,6 @@ class Course:
         Remove 1 interested student.
         """
         self.totalReqStudents -= 1
-    
-        
 
 class Section:
     def __init__(self, courseCode: str, courseType: CourseType):
@@ -106,6 +110,17 @@ class Section:
         self.instructor = None
         self.period = -1
         self.students = []
+
+    def __str__(self) -> str:
+        """
+        Return string representation of Section
+        """
+        ret = "CourseCode: " + self.courseCode
+        ret += "\n of type:" + str(self.courseType.name)
+        ret += "\n with teacher:" + self.instructor.tag 
+        ret += "\n in period: " + str(self.period)
+        ret += "\n with students: " + str([stu.tag for stu in self.students])
+        return ret
 
     def __eq__(self, other) -> bool:
         """
@@ -197,7 +212,7 @@ class Section:
         """
         Returns whether the Section is at least "valid" (all data types populated)
         """
-        instructorValid = (self.instructor != None)
+        instructorValid = (self.instructor != None) and (self.instructor.isQualified(self.courseCode))
         # TODO: Add checks to make sure that two classes aren't at the same time?
         # TODO: If the Teacher instance makes changes to the root Teacher instance, it's easy.
         periodValid = (self.period != -1)

@@ -1,5 +1,9 @@
-from schedule import Schedule
-from course import CourseType, Course, Section
+from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from schedule import Schedule
+    from course import CourseType, Course, Section
+
 # Base class Individual and inheriting classes Student and Teacher for storing information for people.
 class Individual:
     def __init__(self, tag: int):
@@ -7,6 +11,11 @@ class Individual:
         self.schedule = Schedule(tag)
         self.reqOffPeriods = 1
     
+    def __str__(self):
+        ret = "Individual with tag: " + str(self.tag)
+        ret += "\n with schedule: " + str(self.schedule)
+        return ret
+
     def changeReqOff(self, newReq: int):
         """
         Changes number of requested off periods.
@@ -37,7 +46,16 @@ class Individual:
         """
         return self.schedule.getSections()
     
-    def offDelta(self):
+    def getPeriodConstraint(self):
+        """
+        Returns a generator with all of the class size constraints.
+        """
+        currScheduleVals = list(self.schedule.getSections().values())
+        for section in currScheduleVals:
+            yield ((section == None) or (isinstance(section, Section)))
+
+    
+    def getOffDelta(self):
         """
         Positive when more scheduled off than required, negative when fewer scheduled off than required
         """
@@ -91,6 +109,16 @@ class Teacher(Individual):
         self.schedule.removeSection(section)
         self.openPeriods.append(section.period)
     
+    def getReqConstraint(self):
+        """
+        Returns a generator with all of the request constraints.
+        """
+        currScheduleVals = list(self.schedule.getSections().values())
+        for section in self.currScheduleVals:
+            yield (self.isQualified(section.courseCode))
+    
+    
+    
 
 class Student(Individual):
     def __init__(self, tag: int, grade: int):
@@ -122,14 +150,13 @@ class Student(Individual):
         Adds a requested elective class.
         """
         if newElective not in self.reqElectives:
-            self.reqElectives.append(course)
+            self.reqElectives.append(newElective)
             self.reqAll.append(newElective)
     
-    def addReqOffPeriod(self, newOff: int):
+    def addReqOffPeriod(self, newOff: Course):
         """
-        Adds a requested off period.
+        Adds a requested off period. Off period must be a course.
         """
-        # TODO: Will passing int break anything?
         if newOff not in self.reqOffPeriods:
             self.reqOffPeriods.append(newOff)
             self.reqAll.append(newOff)
@@ -193,6 +220,16 @@ class Student(Individual):
             else:
                 ret.append(0)
         return ret
+    
+    def getReqConstraint(self):
+        """
+        Returns a generator with all of the request constraints.
+        """
+        currScheduleVals = list(self.schedule.getSections().values())
+        for course in self.reqAll:
+            yield (currScheduleVals.count(course) == self.reqAll.count(course))
+    
+
     
 
             
