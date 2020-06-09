@@ -1,15 +1,17 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
+from pulp import LpVariable, LpAffineExpression
 if TYPE_CHECKING:
     from schedule import Schedule
     from course import CourseType, Course, Section
 
 # Base class Individual and inheriting classes Student and Teacher for storing information for people.
 class Individual:
-    def __init__(self, tag: int):
+    def __init__(self, tag: int, allCourses: list):
         self.tag = tag
-        self.schedule = Schedule(tag)
+        self.schedule = Schedule(tag, len(allCourses))
         self.reqOffPeriods = 1
+        self.allCourses = allCourses
     
     def __str__(self):
         ret = "Individual with tag: " + str(self.tag)
@@ -45,15 +47,6 @@ class Individual:
         Returns all the schedule along with empty periods.
         """
         return self.schedule.getSections()
-    
-    def getPeriodConstraint(self):
-        """
-        Returns a generator with all of the class size constraints.
-        """
-        currScheduleVals = list(self.schedule.getSections().values())
-        for section in currScheduleVals:
-            yield ((section == None) or (isinstance(section, Section)))
-
     
     def getOffDelta(self):
         """
@@ -109,16 +102,28 @@ class Teacher(Individual):
         self.schedule.removeSection(section)
         self.openPeriods.append(section.period)
     
-    def getReqConstraint(self):
+    def getQualified(self):
         """
-        Returns a generator with all of the request constraints.
+        Yields whether or not teacher is qualified for each class teaching.
         """
         currScheduleVals = list(self.schedule.getSections().values())
         for section in self.currScheduleVals:
             yield (self.isQualified(section.courseCode))
     
-    
-    
+    def getQualConstr(self, allCourses: list):
+        """
+        Yields constraints determining whether a teacher is qualified for a specific course.
+        """
+        index = 0
+        for courseCode in allCourses:
+            isQualified = 0
+            if courseCode in self.qualifications: isQualified = 1
+            
+            ret = []
+            for period in self.schedule.lpVars.keys():
+                ret.append(self.schedule.lpVars[period][index])
+            
+            yield (LpAffineExpression(ret) <= isQualified)
 
 class Student(Individual):
     def __init__(self, tag: int, grade: int):
@@ -221,14 +226,28 @@ class Student(Individual):
                 ret.append(0)
         return ret
     
-    def getReqConstraint(self):
+    def getReqCheck(self):
         """
-        Returns a generator with all of the request constraints.
+        Returns a generator checking if the requests all appear.
         """
         currScheduleVals = list(self.schedule.getSections().values())
         for course in self.reqAll:
             yield (currScheduleVals.count(course) == self.reqAll.count(course))
-    
+
+    def getCourseCheck(self, allCourses: list):
+        """
+        Yields constraints checking if each of the requested courses appear.
+        """
+        index = 0
+        for courseCode in allCourses:
+            isRequested = 0
+            if courseCode in self.reqAll: isRequested = 1
+            
+            ret = []
+            for period in self.schedule.lpVars.keys():
+                ret.append(self.schedule.lpVars[period][index])
+            
+            yield (LpAffineExpression(ret) == isRequested)
 
     
 
