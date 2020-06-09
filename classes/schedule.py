@@ -15,7 +15,7 @@ class Schedule:
         for index in self.lpVars.keys():
             ret = []
             for x in range(0, courseLength):
-                name = "{TAG}_{INDEX}".format(TAG=str(self.tag), INDEX=str(index))
+                name = "{TAG}_{INDEX}_{SECOND}".format(TAG=str(self.tag), INDEX=str(index), SECOND = str(x))
                 newVar = LpVariable(name)
                 ret.append(newVar)
             self.lpVars[index] = ret
