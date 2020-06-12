@@ -109,8 +109,11 @@ class Teacher(Individual):
         currScheduleVals = list(self.schedule.getSections().values())
         for section in self.currScheduleVals:
             yield (self.isQualified(section.courseCode))
+
+    def getQualificationVector(self):
+        raise NotImplementedError
     
-    def getQualConstr(self, allCourses: list):
+    def getConstraints(self, allCourses: list):
         """
         Yields constraints determining whether a teacher is qualified for a specific course.
         """
@@ -234,7 +237,7 @@ class Student(Individual):
         for course in self.reqAll:
             yield (currScheduleVals.count(course) == self.reqAll.count(course))
 
-    def getCourseCheck(self, allCourses: list):
+    def getConstraints(self, allCourses: list):
         """
         Yields constraints checking if each of the requested courses appear.
         """
