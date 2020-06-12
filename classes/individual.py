@@ -1,8 +1,8 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 from pulp import LpVariable, LpAffineExpression
+from schedule import Schedule
 if TYPE_CHECKING:
-    from schedule import Schedule
     from course import CourseType, Course, Section
 
 # Base class Individual and inheriting classes Student and Teacher for storing information for people.
@@ -65,8 +65,8 @@ class Individual:
     
         
 class Teacher(Individual):
-    def __init__(self, tag: int, qualifications: list, openPeriods: list):
-        super().__init__(tag)
+    def __init__(self, tag: int, qualifications: list, openPeriods: list, allCourses: list):
+        super().__init__(tag, allCourses)
         self.qualifications = qualifications
         self.openPeriods = openPeriods
     
@@ -126,8 +126,8 @@ class Teacher(Individual):
             yield (LpAffineExpression(ret) <= isQualified)
 
 class Student(Individual):
-    def __init__(self, tag: int, grade: int):
-        super().__init__(tag)
+    def __init__(self, tag: int, grade: int, allCourses: list):
+        super().__init__(tag, allCourses)
         self.grade = grade
         self.reqCores = []
         self.reqElectives = []

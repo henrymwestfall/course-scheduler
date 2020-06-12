@@ -21,7 +21,7 @@ class Course:
         self.qualifiedTeachers = []
         self.potentialPeriods = []
         self.reqTotalStudents = 0
-        self.courseType = CourseType
+        self.courseType = courseType
 
 
     def __eq__(self, other) -> bool:
@@ -46,7 +46,7 @@ class Course:
         """
         if teacher.isQualified(self.courseCode):
             self.qualifiedTeachers.append(teacher)
-            for period in teacher.availablePeriods:
+            for period in teacher.openPeriods:
                 if period not in self.potentialPeriods:
                     self.potentialPeriods.append(period)
     
@@ -72,7 +72,7 @@ class Course:
         """
         Get number of students interested in the class.
         """
-        return self.totalStudents
+        return self.reqTotalStudents
     
     def getCourseType(self) -> CourseType:
         """
@@ -84,7 +84,7 @@ class Course:
         """
         Create a new section of a class.
         """
-        return Section(self.courseCode)
+        return Section(self.courseCode, self.courseType)
     
     def removeTeacher(self, teacher: Teacher):
         """
@@ -93,7 +93,7 @@ class Course:
         self.qualifiedTeachers.remove(teacher)
         self.potentialPeriods = []
         for teacher in self.qualifiedTeachers:
-            for period in teacher.availablePeriods:
+            for period in teacher.openPeriods:
                 if period not in self.potentialPeriods:
                     self.potentialPeriods.append(period)
     
@@ -101,12 +101,12 @@ class Course:
         """
         Remove 1 interested student.
         """
-        self.totalReqStudents -= 1
+        self.reqTotalStudents -= 1
 
 class Section:
     def __init__(self, courseCode: str, courseType: CourseType):
         self.courseCode = courseCode
-        self.courseType = CourseType
+        self.courseType = courseType
         self.instructor = None
         self.period = -1
         self.students = []
@@ -116,8 +116,8 @@ class Section:
         Return string representation of Section
         """
         ret = "CourseCode: " + self.courseCode
-        ret += "\n of type:" + str(self.courseType.name)
-        ret += "\n with teacher:" + self.instructor.tag 
+        ret += "\n of type: " + str(self.courseType.name)
+        ret += "\n with teacher: " + self.instructor.tag 
         ret += "\n in period: " + str(self.period)
         ret += "\n with students: " + str([stu.tag for stu in self.students])
         return ret
