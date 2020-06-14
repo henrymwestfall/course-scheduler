@@ -3,8 +3,8 @@ from typing import TYPE_CHECKING
 from copy import deepcopy
 from pulp import LpVariable, LpAffineExpression
 if TYPE_CHECKING:
-    from course import CourseType, Course, Section
-    from individual import Teacher, Student, Individual
+    from .course import CourseType, Course, Section
+    from .individual import Teacher, Student, Individual
 
 # Class for storing the schedule associated with any sort of Individual. Uses a dictionary in order to prevent length overflows.
 class Schedule:

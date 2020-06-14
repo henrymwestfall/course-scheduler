@@ -6,6 +6,7 @@ from classes.individual import *
 from classes.course import *
 from classes.schedule import *
 
+
 # define summation function (built-in sum does not work on Affine Expressions)
 def summation(terms):
     """
@@ -38,11 +39,26 @@ def load_students_and_teachers():
 
     # load the raw data
     # TODO: load from a file of some sort
-    rawCourses = [("Pottery 1", CourseType.ELECTIVE)] # example course already in list
-    rawStudentRequests = {} # map student name to requests (strings)
-    rawStudentGrades = {} # map student name to the grade they're in
-    rawTeacherQualifications = {} # map teacher name to qualifications (strings)
-    rawTeacherRequestedOpenPeriods = {} # map teacher name to requested open periods
+    student_requests = [
+                    [0, 1, 3],
+                    [0, 2, 3],
+                    [0, 2, 4],
+                    [1, 3, 4],
+                    [0, 1, 2],
+                    [1, 2, 3]
+    ]
+
+    teacher_qualifs = [
+                    [0, 1, 3],
+                    [0, 2, 4],
+                    [1, 2, 3]
+    ]
+
+    rawCourses = [(str(i), CourseType.CORE) for i in range(5)] # example course already in list
+    rawStudentRequests = {i: reqs for i, reqs in enumerate(student_requests)} # map student name to requests (strings)
+    rawStudentGrades = {i: 12 for i in range(len(student_requests))} # map student name to the grade they're in
+    rawTeacherQualifications = {i: qualifs for i, qualifs in enumerate(teacher_qualifs)} # map teacher name to qualifications (strings)
+    rawTeacherRequestedOpenPeriods = {i: 0 for i in range(len(teacher_qualifs))} # map teacher name to requested open periods
 
 
     # create Courses, Students, and Teachers
@@ -52,7 +68,7 @@ def load_students_and_teachers():
 
     students = []
     for studentName, requestList in rawStudentRequests.items():
-        student = Student(studentName, rawStudentGrades[studentName])
+        student = Student(studentName, rawStudentGrades[studentName], rawCourses)
         students.append(student)
         student.requestAll([courses[c] for c in requestList]) # method not implemented (yet?)
 
@@ -113,45 +129,22 @@ def create_final_sections(students, teachers):
     return allExistingSections
 
 def solve():
+    """
+    The main function
+    """
+
     students, teachers = load_students_and_teachers()
 
-    numGroups = 4
+    problem = LpProblem("Toy Problem")
+    add_constraints_from_individuals(problem, students, teachers)
+    define_global_constraints(problem)
 
-    # prepare data to feed to K-Means
-    features = []
-    for student in students:
-        features.append(student.getReqVector())
-    for teacher in teachers:
-        features.append(teacher.getQualificationVector())
+    status = problem.solve()
+    all_existing_sections = create_final_sections(students, teachers)
 
-    # group students with K-Means clustering
-    whitened = whiten(np.array(features))
-    _, labels = kmeans2(whitened, numGroups)
-
-    # group Student objects from K-Means result
-    groups = [{"Students": [], "Teachers": []} for i in range(numGroups)]
-    for i, indv in enumerate(students + teachers):
-        if isinstance(indv, Student):
-            groups[labels[i]]["Students"](indv)
-        elif isinstance(indv, Teacher):
-            groups[labels[i]]["Teachers"](indv)
-    
-    # solve each group
-    all_existing_sections = []
-    solutions = []
-    for i, group in enumerate(groups):
-        problem = LpProblem(f"Group{i}")
-        add_constraints_from_individuals(problem, *group.values())
-        define_global_constraints(problem)
-
-        status = problem.solve()
-        solutions.append(status)
-
-        group_sections = create_final_sections(*groups.values())
-        all_existing_sections = group_sections
-    
-    success = all([solution == "Optimal" for solution in solutions])
-    print(f"Feasible: {success}")
+    print(f"Solution is {status}")
+    for section in all_existing_sections:
+        print(section)
 
 if __name__ == "__main__":
     solve()

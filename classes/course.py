@@ -2,8 +2,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from enum import Enum
 if TYPE_CHECKING:
-    from individual import Teacher, Student, Individual
-    from schedule import Schedule
+    from .individual import Teacher, Student, Individual
+    from .schedule import Schedule
 
 
 # Defines classes relating to courses and sections.
