@@ -2,8 +2,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from copy import deepcopy
 from pulp import LpVariable, LpAffineExpression
+from course import CourseType, Course, Section
 if TYPE_CHECKING:
-    from .course import CourseType, Course, Section
     from .individual import Teacher, Student, Individual
 
 # Class for storing the schedule associated with any sort of Individual. Uses a dictionary in order to prevent length overflows.
@@ -15,7 +15,7 @@ class Schedule:
         for index in self.lpVars.keys():
             ret = []
             for x in range(0, courseLength):
-                name = "{TAG}_{INDEX}".format(TAG=str(self.tag), INDEX=str(index))
+                name = "{TAG}_{INDEX}_{SECOND}".format(TAG=str(self.tag), INDEX=str(index), SECOND = str(x))
                 newVar = LpVariable(name)
                 ret.append(newVar)
             self.lpVars[index] = ret
@@ -32,7 +32,7 @@ class Schedule:
         """
         ret = []
         for period in self.sections.keys():
-            if self.section[period] == None:
+            if self.sections[period] == None:
                 ret.append(period)
         return ret
     
@@ -42,10 +42,11 @@ class Schedule:
         """
         return self.sections
     
-    def addSection(self, newSection: Section, pos: int) -> bool:
+    def addSection(self, newSection: Section) -> bool:
         """
         Adds a section at position pos. Does not work if the period is already filled. Returns True if successfully completed.
         """
+        pos = newSection.period
         if self.sections[pos]==None and newSection not in self.sections.values():
             self.sections[pos] = newSection
             return True
@@ -55,8 +56,9 @@ class Schedule:
         """
         Removes a section by the Section object. Replaces with None.
         """
-        if self.sections[section.period] == section:
-            self.sections[section.period] = None
+        pos = section.period
+        if self.sections[pos] == section:
+            self.sections[pos] = None
 
     def getValidityConstr(self):
         """
@@ -65,8 +67,9 @@ class Schedule:
         for period in self.sections.keys():
             section = self.sections[period]
             hasClass = 0
-            if section.courseType!=Course.OFF: hasClass = 1
-            yield (LpAffineExpression(self.lpVars[period]) <= hasClass)
+            if section!=None and section.courseType != CourseType.OFF: hasClass = 1
+            expr = [(var, 1) for var in self.lpVars[period]]
+            yield (LpAffineExpression(expr) <= hasClass)
 
     def haveTeachers(self):
         """
@@ -74,7 +77,7 @@ class Schedule:
         """
         ret = True
         for section in self.sections.values():
-            if section.courseType != CourseType.OFF:
+            if section != None and section.courseType != CourseType.OFF:
                 yield ret == ret and section.isValid()
                 # isValid checks teacher qualifications AND makes sure everything's right.
     
