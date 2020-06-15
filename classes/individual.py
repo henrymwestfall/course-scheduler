@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 from pulp import LpVariable, LpAffineExpression
-from schedule import Schedule
+from .schedule import Schedule
 if TYPE_CHECKING:
     from .course import CourseType, Course, Section
 
