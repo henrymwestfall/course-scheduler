@@ -7,30 +7,7 @@ from classes.course import *
 from classes.schedule import *
 
 
-# define summation function (built-in sum does not work on Affine Expressions)
-def summation(terms):
-    """
-    return a usable sum of `terms` where coefficients are 1
-    """
-    total = LpAffineExpression({t: 1 for t in terms})
-    return total
-
-def summation_test():
-    """
-    test the summation function and return a boolean of it's result.
-    """
-
-    test_1 = LpVariable("Test_1", lowBound = 0, upBound = 1, cat="Integer")
-    test_2 = LpVariable("Test_2", lowBound = 0, upBound = 1, cat="Integer")
-    test_3 = LpVariable("Test_3", lowBound = 0, upBound = 1, cat="Integer")
-    if str(summation([test_1, test_2, test_3])) == "Test_1 + Test_2 + Test_3":
-        print("Summation test passed.")
-        return True
-    else:
-        print("Summation test failed.")
-        return False
-
-def load_students_and_teachers():
+def load_students_and_teachers_and_courses():
     """
     Return a tuple containing a list of Teacher and Student objects.
     This loads the courses and adds them to the objects request/qualification
@@ -70,26 +47,26 @@ def load_students_and_teachers():
     for studentName, requestList in rawStudentRequests.items():
         student = Student(studentName, rawStudentGrades[studentName], rawCourses)
         students.append(student)
-        student.requestAll([courses[c] for c in requestList]) # method not implemented (yet?)
+        student.requestAll([courses[str(c)] for c in requestList])
 
     teachers = []
     for teacherName, qualifications in rawTeacherQualifications.items():
-        teacher = Teacher(teacherName, qualifications, rawTeacherRequestedOpenPeriods[teacherName])
+        teacher = Teacher(teacherName, qualifications, rawTeacherRequestedOpenPeriods[teacherName], list(courses.values()))
         teachers.append(teacher)
 
-    return students, teachers
+    return students, teachers, list(courses.values())
 # Note: it would be nice if Teacher and Student constructors were more similar
 
-def add_constraints_from_individuals(problem, constraining_students, constraining_teachers):
+def add_constraints_from_individuals(problem, constraining_students, constraining_teachers, all_courses):
     """
     add constraints from constraining_students and constraining_teachers to problem.
     """
 
     for student in constraining_students:
-        for constraint in student.getConstraints(): # method not implemented yet
+        for constraint in student.getConstraints(all_courses): # method not implemented yet
             problem += constraint
     for teacher in constraining_teachers:
-        for constraint in teacher.getConstraints(): # method not implemented yet
+        for constraint in teacher.getConstraints(all_courses): # method not implemented yet
             problem += constraint
 
 def define_global_constraints(problem):
@@ -133,10 +110,10 @@ def solve():
     The main function
     """
 
-    students, teachers = load_students_and_teachers()
+    students, teachers, all_courses = load_students_and_teachers_and_courses()
 
     problem = LpProblem("Toy Problem")
-    add_constraints_from_individuals(problem, students, teachers)
+    add_constraints_from_individuals(problem, students, teachers, all_courses)
     define_global_constraints(problem)
 
     status = problem.solve()

@@ -1,9 +1,11 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 from pulp import LpVariable, LpAffineExpression
 from .schedule import Schedule
+from .course import CourseType
+from utils import summation
 if TYPE_CHECKING:
-    from .course import CourseType, Course, Section
+    from .course import Course, Section
 
 # Base class Individual and inheriting classes Student and Teacher for storing information for people.
 class Individual:
@@ -126,7 +128,7 @@ class Teacher(Individual):
             for period in self.schedule.lpVars.keys():
                 ret.append(self.schedule.lpVars[period][index])
             
-            yield (LpAffineExpression(ret) <= isQualified)
+            yield (summation(ret) <= isQualified)
 
 class Student(Individual):
     def __init__(self, tag: int, grade: int, allCourses: list):
@@ -152,7 +154,7 @@ class Student(Individual):
         if newCore not in self.reqCores:
             self.reqCores.append(newCore)
             self.reqAll.append(newCore)
-    
+
     def addReqElective(self, newElective: Course):
         """
         Adds a requested elective class.
@@ -160,6 +162,17 @@ class Student(Individual):
         if newElective not in self.reqElectives:
             self.reqElectives.append(newElective)
             self.reqAll.append(newElective)
+
+    def requestAll(self, newCourses: List[Course]):
+        """
+        Adds requested courses
+        """
+
+        for c in newCourses:
+            if c.courseType == CourseType.CORE:
+                self.addReqCore(c)
+            elif c.courseType == CourseType.ELECTIVE:
+                self.addReqElective(c)
     
     def addReqOffPeriod(self, newOff: Course):
         """
@@ -250,7 +263,7 @@ class Student(Individual):
             for period in self.schedule.lpVars.keys():
                 ret.append(self.schedule.lpVars[period][index])
             
-            yield (LpAffineExpression(ret) == isRequested)
+            yield (summation(ret) == isRequested)
 
     
 
