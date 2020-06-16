@@ -101,14 +101,15 @@ class Teacher(Individual):
         """
         self.schedule.removeSection(section)
         self.openPeriods.append(section.period)
+        self.openPeriods.sort()
     
     def getQualified(self):
         """
         Yields whether or not teacher is qualified for each class teaching.
         """
         currScheduleVals = list(self.schedule.getSections().values())
-        for section in self.currScheduleVals:
-            yield (self.isQualified(section.courseCode))
+        for section in currScheduleVals:
+            yield (section == None or self.isQualified(section.courseCode))
     
     def getQualConstr(self, allCourses: list):
         """
@@ -121,7 +122,7 @@ class Teacher(Individual):
             
             ret = []
             for period in self.schedule.lpVars.keys():
-                ret.append(self.schedule.lpVars[period][index])
+                ret.append((self.schedule.lpVars[period][index], 1))
             
             yield (LpAffineExpression(ret) <= isQualified)
 
@@ -138,7 +139,8 @@ class Student(Individual):
         """
         Adds to list of all requested classes.
         """
-        self.reqAll = self.reqCores
+        self.reqAll = []
+        self.reqAll.extend(self.reqCores)
         self.reqAll.extend(self.reqElectives)
         self.reqAll.extend(self.reqOffPeriods)
 
@@ -186,7 +188,7 @@ class Student(Individual):
     
     def getReqOff(self) -> list:
         """
-        Get period numbers of requested off periods.
+        Get requested off periods (Courses).
         """
         return self.reqOffPeriods
     
@@ -203,15 +205,15 @@ class Student(Individual):
         Removes requested elective Course.
         """
         if elective in self.reqElectives:
-            self.reqCores.remove(elective)
+            self.reqElectives.remove(elective)
             self.reqAll.remove(elective)
     
-    def removeReqOff(self, off: int):
+    def removeReqOff(self, off: Course):
         """
-        Removes requested off period (int).
+        Removes requested off Course.
         """
         if off in self.reqOffPeriods:
-            self.reqCores.remove(off)
+            self.reqOffPeriods.remove(off)
             self.reqAll.remove(off)
     
     def getReqVector(self, allCourseCodes: list):
@@ -219,21 +221,22 @@ class Student(Individual):
         Returns request vector from a list of all course codes.
         """
         ret = []
+        codes = [x.courseCode for x in self.reqAll]
         for x in allCourseCodes:
-            if x in self.reqAll:
+            if x in codes:
                 ret.append(1)
             else:
                 ret.append(0)
         return ret
-    
+    """
+    TODO: Fix or remove?
     def getReqCheck(self):
-        """
         Returns a generator checking if the requests all appear.
-        """
+        
         currScheduleVals = list(self.schedule.getSections().values())
         for course in self.reqAll:
             yield (currScheduleVals.count(course) == self.reqAll.count(course))
-
+    """
     def getCourseCheck(self, allCourses: list):
         """
         Yields constraints checking if each of the requested courses appear.
@@ -245,7 +248,9 @@ class Student(Individual):
             
             ret = []
             for period in self.schedule.lpVars.keys():
-                ret.append(self.schedule.lpVars[period][index])
+                ret.append((self.schedule.lpVars[period][index],1))
+            
+            index+=1
             
             yield (LpAffineExpression(ret) == isRequested)
 
