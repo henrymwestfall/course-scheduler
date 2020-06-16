@@ -263,8 +263,7 @@ class Student(Individual):
         """
         Yields constraints checking if each of the requested courses appear.
         """
-        index = 0
-        for courseCode in allCourses:
+        for index, courseCode in enumerate(allCourses):
             isRequested = 0
             if courseCode in self.reqAll: isRequested = 1
             
