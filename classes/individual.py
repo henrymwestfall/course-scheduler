@@ -113,7 +113,16 @@ class Teacher(Individual):
             yield (self.isQualified(section.courseCode))
 
     def getQualificationVector(self):
-        raise NotImplementedError
+        """
+        Returns (eager) of the teacher's qualifications
+        """
+        vector = [0] * len(self.allCourses)
+        for course in self.qualifications:
+            index = self.allCourses.index(course)
+            vector[index] = 1
+
+        return vector
+        #raise NotImplementedError("Method not yet implemented")
     
     def getConstraints(self, allCourses: list):
         """

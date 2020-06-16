@@ -51,7 +51,8 @@ def load_students_and_teachers_and_courses():
 
     teachers = []
     for teacherName, qualifications in rawTeacherQualifications.items():
-        teacher = Teacher(teacherName, qualifications, rawTeacherRequestedOpenPeriods[teacherName], list(courses.values()))
+        qualifications_with_course_objects = [courses[str(q)] for q in qualifications]
+        teacher = Teacher(teacherName, qualifications_with_course_objects, rawTeacherRequestedOpenPeriods[teacherName], list(courses.values()))
         teachers.append(teacher)
 
     return students, teachers, list(courses.values())
@@ -69,13 +70,27 @@ def add_constraints_from_individuals(problem, constraining_students, constrainin
         for constraint in teacher.getConstraints(all_courses): # method not implemented yet
             problem += constraint
 
-def define_global_constraints(problem):
+def define_global_constraints(problem, students, teachers):
     """
     add constraints that affect multiple individuals simultaneously to problem.
     """
 
-    # TODO: define the constraint(s) that each class must have a teacher
-    pass
+    # set is ideal, but LpConstraints are unhashable
+    all_constraints = []
+
+    for student in students:
+        for period, lpVars in student.schedule.lpVars.items():
+            for class_id, attending in enumerate(lpVars):
+                # get corresponding qualified teachers
+                teacher_assignment_variables = []
+                for teacher in teachers:
+                    if teacher.getQualificationVector()[class_id] == 1:
+                        teacher_assignment_variables.append(teacher.schedule.lpVars[period][class_id])
+                c = summation(teacher_assignment_variables) >= attending
+                all_constraints.append(c)
+    
+    for c in all_constraints:
+        problem += c
 
 # create all sections locally in students
 def create_final_sections(students, teachers):
@@ -114,7 +129,7 @@ def solve():
 
     problem = LpProblem("Toy Problem")
     add_constraints_from_individuals(problem, students, teachers, all_courses)
-    define_global_constraints(problem)
+    define_global_constraints(problem, students, teachers)
 
     status = problem.solve()
     all_existing_sections = create_final_sections(students, teachers)
