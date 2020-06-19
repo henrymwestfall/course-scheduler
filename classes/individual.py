@@ -1,9 +1,10 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 from pulp import LpVariable, LpAffineExpression
 from schedule import Schedule
+from course import CourseType
 if TYPE_CHECKING:
-    from course import CourseType, Course, Section
+    from .course import Course, Section
 
 # Base class Individual and inheriting classes Student and Teacher for storing information for people.
 class Individual:
@@ -111,7 +112,19 @@ class Teacher(Individual):
         for section in currScheduleVals:
             yield (section == None or self.isQualified(section.courseCode))
     
-    def getQualConstr(self, allCourses: list):
+    def getQualificationVector(self):
+        """
+        Returns (eager) of the teacher's qualifications
+        """
+        vector = [0] * len(self.allCourses)
+        for course in self.qualifications:
+            index = self.allCourses.index(course)
+            vector[index] = 1
+
+        return vector
+        #raise NotImplementedError("Method not yet implemented")
+    
+    def getConstraints(self, allCourses: list):
         """
         Yields constraints determining whether a teacher is qualified for a specific course.
         """
@@ -151,7 +164,7 @@ class Student(Individual):
         if newCore not in self.reqCores:
             self.reqCores.append(newCore)
             self.reqAll.append(newCore)
-    
+
     def addReqElective(self, newElective: Course):
         """
         Adds a requested elective class.
@@ -159,6 +172,17 @@ class Student(Individual):
         if newElective not in self.reqElectives:
             self.reqElectives.append(newElective)
             self.reqAll.append(newElective)
+
+    def requestAll(self, newCourses: List[Course]):
+        """
+        Adds requested courses
+        """
+
+        for c in newCourses:
+            if c.courseType == CourseType.CORE:
+                self.addReqCore(c)
+            elif c.courseType == CourseType.ELECTIVE:
+                self.addReqElective(c)
     
     def addReqOffPeriod(self, newOff: Course):
         """
@@ -237,12 +261,11 @@ class Student(Individual):
         for course in self.reqAll:
             yield (currScheduleVals.count(course) == self.reqAll.count(course))
     """
-    def getCourseCheck(self, allCourses: list):
+    def getConstraints(self, allCourses: list):
         """
         Yields constraints checking if each of the requested courses appear.
         """
-        index = 0
-        for courseCode in allCourses:
+        for index, courseCode in enumerate(allCourses):
             isRequested = 0
             if courseCode in self.reqAll: isRequested = 1
             

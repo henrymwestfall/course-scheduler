@@ -42,7 +42,7 @@ class testIndividualMethods(unittest.TestCase):
         (LpVariable("test_t_6_0"), 1),
         (LpVariable("test_t_7_0"), 1),
         (LpVariable("test_t_8_0"),1)]
-        for res in self.teacher.getQualConstr(["test"]):
+        for res in self.teacher.getConstraints(["test"]):
             self.assertEqual(res, LpAffineExpression(right) <=1)
 
     def test_student(self):
@@ -78,7 +78,7 @@ class testIndividualMethods(unittest.TestCase):
         (LpVariable("test_s_8_0"),1)]
         
         
-        for res in self.stud.getCourseCheck(["test"]):
+        for res in self.stud.getConstraints(["test"]):
             self.assertEqual(res, LpAffineExpression(right) == 1)
                 
 
