@@ -5,6 +5,7 @@ import numpy as np
 from classes.individual import *
 from classes.course import *
 from classes.schedule import *
+from utils import summation
 
 
 def load_students_and_teachers_and_courses():

@@ -1,8 +1,8 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING, List
 from pulp import LpVariable, LpAffineExpression
-from schedule import Schedule
-from course import CourseType
+from .schedule import Schedule
+from .course import CourseType
 if TYPE_CHECKING:
     from .course import Course, Section
 

@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from copy import deepcopy
 from pulp import LpVariable, LpAffineExpression
-from course import CourseType, Course, Section
+from .course import CourseType, Course, Section
 if TYPE_CHECKING:
     from individual import Teacher, Student, Individual
 
