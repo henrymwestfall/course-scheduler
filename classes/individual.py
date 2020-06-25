@@ -75,24 +75,28 @@ class Teacher(Individual):
         """
         Returns whether a teacher is qualified for a particular courseCode.
         """
+        
         return (courseCode in self.qualifications)
     
     def getOpenPeriods(self) -> list:
         """
         Returns open periods.
         """
+
         return self.openPeriods
     
     def isOpen(self, period: int) -> bool:
         """
         Returns whether a particular period is open.
         """
+
         return (period in self.openPeriods)
 
     def addSection(self, newSection: Section):
         """
         Adds a section to the schedule.
         """
+
         res = self.schedule.addSection(newSection)
         if res: self.openPeriods.remove(newSection.period)
     
@@ -100,6 +104,7 @@ class Teacher(Individual):
         """
         Removes a section from the schedule.
         """
+
         self.schedule.removeSection(section)
         self.openPeriods.append(section.period)
         self.openPeriods.sort()
@@ -108,6 +113,7 @@ class Teacher(Individual):
         """
         Yields whether or not teacher is qualified for each class teaching.
         """
+
         currScheduleVals = list(self.schedule.getSections().values())
         for section in currScheduleVals:
             yield (section == None or self.isQualified(section.courseCode))
@@ -121,6 +127,7 @@ class Teacher(Individual):
             index = self.allCourses.index(course)
             vector[index] = 1
 
+
         return vector
         #raise NotImplementedError("Method not yet implemented")
     
@@ -128,10 +135,12 @@ class Teacher(Individual):
         """
         Yields constraints determining whether a teacher is qualified for a specific course.
         """
+        
         index = 0
         for courseCode in allCourses:
             isQualified = 0
-            if courseCode in self.qualifications: isQualified = 1
+            if courseCode in self.qualifications: 
+                isQualified = 1
             
             ret = []
             for period in self.schedule.lpVars.keys():
@@ -265,6 +274,7 @@ class Student(Individual):
         """
         Yields constraints checking if each of the requested courses appear.
         """
+
         for index, courseCode in enumerate(allCourses):
             isRequested = 0
             if courseCode in self.reqAll: isRequested = 1

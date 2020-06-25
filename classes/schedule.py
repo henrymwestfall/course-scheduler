@@ -16,7 +16,7 @@ class Schedule:
             ret = []
             for x in range(0, courseLength):
                 name = "{TAG}_{INDEX}_{SECOND}".format(TAG=str(self.tag), INDEX=str(index), SECOND = str(x))
-                newVar = LpVariable(name) # add constraining values and type
+                newVar = LpVariable(name, lowBound=0, upBound=1, cat="Integer") # add constraining values and type
                 ret.append(newVar)
             self.lpVars[index] = ret
     

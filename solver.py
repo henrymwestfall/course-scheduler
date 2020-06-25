@@ -1,4 +1,4 @@
-from pulp import LpProblem, LpAffineExpression, LpVariable
+from pulp import LpProblem, LpAffineExpression, LpVariable, LpConstraint
 from scipy.cluster.vq import vq, kmeans2, whiten
 import numpy as np
 
@@ -66,14 +66,16 @@ def add_constraints_from_individuals(problem, constraining_students, constrainin
 
     for student in constraining_students:
         for constraint in student.getConstraints(all_courses): # method not implemented yet
+            assert isinstance(constraint, LpConstraint), "student constraint was illegal"
             problem += constraint
     for teacher in constraining_teachers:
         for constraint in teacher.getConstraints(all_courses): # method not implemented yet
+            assert isinstance(constraint, LpConstraint), "teacher constraint was illegal"
             problem += constraint
 
 def define_global_constraints(problem, students, teachers):
     """
-    add constraints that affect multiple individuals simultaneously to problem.
+    add constraints that affect multiple individuals simultaneously to problem. 
     """
 
     # set is ideal, but LpConstraints are unhashable
@@ -91,6 +93,7 @@ def define_global_constraints(problem, students, teachers):
                 all_constraints.append(c)
     
     for c in all_constraints:
+        assert isinstance(c, LpConstraint), "global constraint was illegal"
         problem += c
 
 # create all sections locally in students
@@ -128,7 +131,7 @@ def solve():
 
     students, teachers, all_courses = load_students_and_teachers_and_courses()
 
-    problem = LpProblem("Toy Problem")
+    problem = LpProblem("Toy_Problem")
     add_constraints_from_individuals(problem, students, teachers, all_courses)
     define_global_constraints(problem, students, teachers)
 
