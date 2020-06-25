@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, List
 from pulp import LpVariable, LpAffineExpression
 from .schedule import Schedule
 from .course import CourseType
+from utils import summation
 if TYPE_CHECKING:
     from .course import Course, Section
 
@@ -148,9 +149,15 @@ class Teacher(Individual):
             
             ret = []
             for period in self.schedule.lpVars.keys():
-                ret.append((self.schedule.lpVars[period][index], 1))
-            
-            yield (LpAffineExpression(ret) <= isQualified)
+                variable = self.schedule.lpVars[period][index]
+                assert isinstance(variable, LpVariable)
+                ret.append(variable)
+            sum_of_ret = summation(ret)
+
+            assert isinstance(sum_of_ret, LpAffineExpression)
+            assert isinstance(sum_of_ret == isQualified, LpAffineExpression)
+
+            yield (sum_of_ret <= isQualified)
 
 class Student(Individual):
     def __init__(self, tag: int, grade: int, allCourses: list):
@@ -285,11 +292,14 @@ class Student(Individual):
             
             ret = []
             for period in self.schedule.lpVars.keys():
-                ret.append((self.schedule.lpVars[period][index],1))
-            
-            index+=1
-            
-            yield (LpAffineExpression(ret) == isRequested)
+                variable = self.schedule.lpVars[period][index]
+                assert isinstance(variable, LpVariable)
+                ret.append(variable)
+            sum_of_ret = summation(ret)
+            assert isinstance(sum_of_ret, LpAffineExpression)
+            assert isinstance(sum_of_ret == isRequested, LpAffineExpression)
+
+            yield (sum_of_ret == isRequested)
 
     
 

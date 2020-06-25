@@ -1,6 +1,7 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 from enum import Enum
+from utils import summation
 if TYPE_CHECKING:
     from individual import Teacher, Student, Individual
     from schedule import Schedule
