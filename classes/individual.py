@@ -115,6 +115,10 @@ class Teacher(Individual):
         """
 
         currScheduleVals = list(self.schedule.getSections().values())
+        for section in self.currScheduleVals:
+            yield (self.isQualified(section.courseCode))
+
+        currScheduleVals = list(self.schedule.getSections().values())
         for section in currScheduleVals:
             yield (section == None or self.isQualified(section.courseCode))
     
