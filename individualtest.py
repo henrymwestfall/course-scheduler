@@ -1,7 +1,7 @@
 import unittest
-from course import Course, CourseType, Section
-from individual import Student, Teacher
-from schedule import Schedule
+from classes.course import Course, CourseType, Section
+from classes.individual import Student, Teacher
+from classes.schedule import Schedule
 from pulp import LpVariable, LpAffineExpression
 from copy import deepcopy
 
