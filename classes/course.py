@@ -41,7 +41,7 @@ class Course:
         """
         self.reqTotalStudents += 1
     
-    def addTeacher(self, teacher: Teacher):
+    def addTeacher(self, teacher: Teacher): 
         """
         Adds a teacher object to the list of qualified teachers and updates list of potential periods
         """

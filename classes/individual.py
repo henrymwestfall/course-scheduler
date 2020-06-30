@@ -1,8 +1,8 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING, List
-from pulp import LpVariable, LpAffineExpression
+from pulp import LpVariable, LpAffineExpression, value
 from .schedule import Schedule
-from .course import CourseType
+from .course import CourseType, Section
 from utils import summation
 if TYPE_CHECKING:
     from .course import Course, Section
@@ -14,6 +14,8 @@ class Individual:
         self.schedule = Schedule(tag, len(allCourses))
         self.reqOffPeriods = 1
         self.allCourses = allCourses
+
+        self.constraint_sequence = self.getConstraints(self.allCourses)
     
     def __str__(self):
         ret = "Individual with tag: " + str(self.tag)
@@ -64,7 +66,46 @@ class Individual:
             if period in lunchPeriods:
                 return True
         return False
-    
+
+    def getConstraints(self, allCourses):
+        raise ValueError("Individual.getConstraints must be overridden for valid call")
+
+    @property
+    def next_constraint(self):
+        try:
+            return next(self.constraint_sequence)
+        except StopIteration as e:
+            return e
+
+    def createSections(self):
+        """
+        Creates all necessary sections as if they do not exist yet.
+        Currently this is eager. Consider making this lazy.
+        """
+
+        sections = []
+        for period_list in self.schedule.lpVars.values():
+            for variable in period_list:
+                if value(variable) == 1:
+                    # this course has been assigned at this period
+                    tokens = self.schedule.parseVariableName(variable.name)
+                    courseCode = tokens["course"]
+                    new_section = Section(courseCode, CourseType.CORE) # TODO: put the correct course type
+                    new_section.changePeriod(int(tokens["period"]))
+
+                    sections.append(new_section)
+        
+        return sections
+
+    def addToSection(self, section):
+        """
+        Add this individual to the section. This should never be called on the Individual
+        class because it is neither a Teacher nor a Student by default. Thus it must
+        be overridden.
+        """
+
+        raise ValueError("Individual.addToSection must be overridden for valid call")
+
         
 class Teacher(Individual):
     def __init__(self, tag: int, qualifications: list, openPeriods: list, allCourses: list):
@@ -141,15 +182,14 @@ class Teacher(Individual):
         Yields constraints determining whether a teacher is qualified for a specific course.
         """
         
-        index = 0
-        for courseCode in allCourses:
+        for course in allCourses:
             isQualified = 0
-            if courseCode in self.qualifications: 
+            if course.courseCode in self.qualifications: 
                 isQualified = 1
             
             ret = []
             for period in self.schedule.lpVars.keys():
-                variable = self.schedule.lpVars[period][index]
+                variable = self.schedule.lpVars[period][int(course.courseCode)]
                 assert isinstance(variable, LpVariable)
                 ret.append(variable)
             sum_of_ret = summation(ret)
@@ -158,6 +198,9 @@ class Teacher(Individual):
             assert isinstance(sum_of_ret == isQualified, LpAffineExpression)
 
             yield (sum_of_ret <= isQualified)
+    
+    def addToSection(self, section):
+        section.changeInstructor(self)
 
 class Student(Individual):
     def __init__(self, tag: int, grade: int, allCourses: list):
@@ -248,6 +291,7 @@ class Student(Individual):
         """
         Removes requested elective Course.
         """
+
         if elective in self.reqElectives:
             self.reqElectives.remove(elective)
             self.reqAll.remove(elective)
@@ -256,6 +300,7 @@ class Student(Individual):
         """
         Removes requested off Course.
         """
+
         if off in self.reqOffPeriods:
             self.reqOffPeriods.remove(off)
             self.reqAll.remove(off)
@@ -264,6 +309,7 @@ class Student(Individual):
         """
         Returns request vector from a list of all course codes.
         """
+
         ret = []
         codes = [x.courseCode for x in self.reqAll]
         for x in allCourseCodes:
@@ -286,21 +332,21 @@ class Student(Individual):
         Yields constraints checking if each of the requested courses appear.
         """
 
-        for index, courseCode in enumerate(allCourses):
+        for course in allCourses:
             isRequested = 0
-            if courseCode in self.reqAll: isRequested = 1
+            if course in self.reqAll: 
+                isRequested = 1
             
             ret = []
             for period in self.schedule.lpVars.keys():
-                variable = self.schedule.lpVars[period][index]
+                variable = self.schedule.lpVars[period][int(course.courseCode)]
                 assert isinstance(variable, LpVariable)
                 ret.append(variable)
             sum_of_ret = summation(ret)
             assert isinstance(sum_of_ret, LpAffineExpression)
             assert isinstance(sum_of_ret == isRequested, LpAffineExpression)
 
-            yield (sum_of_ret == isRequested)
+            yield sum_of_ret == isRequested
 
-    
-
-            
+    def addToSection(self, section):
+        section.addStudent(self)
