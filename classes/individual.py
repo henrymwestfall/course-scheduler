@@ -1,18 +1,21 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING, List
-from pulp import LpVariable, LpAffineExpression
+from pulp import LpVariable, LpAffineExpression, value
 from .schedule import Schedule
-from .course import CourseType
+from .course import CourseType, Section
+from utils import summation
 if TYPE_CHECKING:
-    from .course import Course, Section
+    from .course import Course
 
 # Base class Individual and inheriting classes Student and Teacher for storing information for people.
 class Individual:
-    def __init__(self, tag: int, allCourses: list):
+    def __init__(self, tag: int, allCourses: List[Course]):
         self.tag = tag
         self.schedule = Schedule(tag, len(allCourses))
         self.reqOffPeriods = 1
         self.allCourses = allCourses
+
+        self.constraint_sequence = self.getConstraints(self.allCourses)
     
     def __str__(self):
         ret = "Individual with tag: " + str(self.tag)
@@ -55,7 +58,7 @@ class Individual:
         """
         return (len(self.schedule.getOpenPeriods()) - self.reqOffPeriods)
     
-    def hasPotentialLunchSlot(self, lunchPeriods: list):
+    def hasPotentialLunchSlot(self, lunchPeriods: List[int]):
         """
         Return whether there is an open period in the potential lunch periods.
         """
@@ -63,10 +66,49 @@ class Individual:
             if period in lunchPeriods:
                 return True
         return False
-    
+
+    def getConstraints(self, allCourses):
+        raise ValueError("Individual.getConstraints must be overridden for valid call")
+
+    @property
+    def next_constraint(self):
+        try:
+            return next(self.constraint_sequence)
+        except StopIteration as e:
+            return e
+
+    def createSections(self) -> List[Section]:
+        """
+        Creates all necessary sections as if they do not exist yet.
+        Currently this is eager. Consider making this lazy.
+        """
+
+        sections = []
+        for period_list in self.schedule.lpVars.values():
+            for variable in period_list:
+                if value(variable) == 1:
+                    # this course has been assigned at this period
+                    tokens = self.schedule.parseVariableName(variable.name)
+                    courseCode = tokens["course"]
+                    new_section = Section(courseCode, CourseType.CORE) # TODO: put the correct course type
+                    new_section.changePeriod(int(tokens["period"]))
+
+                    sections.append(new_section)
+        
+        return sections
+
+    def addToSection(self, section):
+        """
+        Add this individual to the section. This should never be called on the Individual
+        class because it is neither a Teacher nor a Student by default. Thus it must
+        be overridden.
+        """
+
+        raise ValueError("Individual.addToSection must be overridden for valid call")
+
         
 class Teacher(Individual):
-    def __init__(self, tag: int, qualifications: list, openPeriods: list, allCourses: list):
+    def __init__(self, tag: int, allCourses: List[str], qualifications: List[str], openPeriods: list):
         super().__init__(tag, allCourses)
         self.qualifications = qualifications
         self.openPeriods = openPeriods
@@ -75,24 +117,28 @@ class Teacher(Individual):
         """
         Returns whether a teacher is qualified for a particular courseCode.
         """
+        
         return (courseCode in self.qualifications)
     
-    def getOpenPeriods(self) -> list:
+    def getOpenPeriods(self) -> List[int]:
         """
-        Returns open periods.
+        Returns open periods numbers.
         """
+
         return self.openPeriods
     
     def isOpen(self, period: int) -> bool:
         """
         Returns whether a particular period is open.
         """
+
         return (period in self.openPeriods)
 
     def addSection(self, newSection: Section):
         """
         Adds a section to the schedule.
         """
+
         res = self.schedule.addSection(newSection)
         if res: self.openPeriods.remove(newSection.period)
     
@@ -100,6 +146,7 @@ class Teacher(Individual):
         """
         Removes a section from the schedule.
         """
+
         self.schedule.removeSection(section)
         self.openPeriods.append(section.period)
         self.openPeriods.sort()
@@ -108,11 +155,12 @@ class Teacher(Individual):
         """
         Yields whether or not teacher is qualified for each class teaching.
         """
+
         currScheduleVals = list(self.schedule.getSections().values())
         for section in currScheduleVals:
             yield (section == None or self.isQualified(section.courseCode))
     
-    def getQualificationVector(self):
+    def getQualificationVector(self) -> List[int]:
         """
         Returns (eager) of the teacher's qualifications
         """
@@ -122,56 +170,43 @@ class Teacher(Individual):
             vector[index] = 1
 
         return vector
-        #raise NotImplementedError("Method not yet implemented")
     
-    def getConstraints(self, allCourses: list):
+    def getConstraints(self, allCourses: List[str]):
         """
         Yields constraints determining whether a teacher is qualified for a specific course.
         """
-        index = 0
-        for courseCode in allCourses:
+        
+        for course in allCourses:
             isQualified = 0
-            if courseCode in self.qualifications: isQualified = 1
+            if course.courseCode in self.qualifications: 
+                isQualified = 1
             
             ret = []
             for period in self.schedule.lpVars.keys():
-                ret.append((self.schedule.lpVars[period][index], 1))
-            
-            yield (LpAffineExpression(ret) <= isQualified)
+                variable = self.schedule.lpVars[period][int(course.courseCode)]
+                assert isinstance(variable, LpVariable)
+                ret.append(variable)
+            sum_of_ret = summation(ret)
+
+            assert isinstance(sum_of_ret, LpAffineExpression)
+            assert isinstance(sum_of_ret == isQualified, LpAffineExpression)
+
+            yield (sum_of_ret <= isQualified)
+    
+    def addToSection(self, section):
+        section.changeInstructor(self)
+    
+    def getOpenScore(self) -> int:
+        """
+        Returns number of off periods
+        """
+        return len(self.openPeriods)
 
 class Student(Individual):
-    def __init__(self, tag: int, grade: int, allCourses: list):
+    def __init__(self, tag: int, allCourses: List[str], grade: int):
         super().__init__(tag, allCourses)
         self.grade = grade
-        self.reqCores = []
-        self.reqElectives = []
-        self.reqOffPeriods = []
-        self.updateReqAll()
-    
-    def updateReqAll(self):
-        """
-        Adds to list of all requested classes.
-        """
         self.reqAll = []
-        self.reqAll.extend(self.reqCores)
-        self.reqAll.extend(self.reqElectives)
-        self.reqAll.extend(self.reqOffPeriods)
-
-    def addReqCore(self, newCore: Course):
-        """
-        Adds a requested core class.
-        """
-        if newCore not in self.reqCores:
-            self.reqCores.append(newCore)
-            self.reqAll.append(newCore)
-
-    def addReqElective(self, newElective: Course):
-        """
-        Adds a requested elective class.
-        """
-        if newElective not in self.reqElectives:
-            self.reqElectives.append(newElective)
-            self.reqAll.append(newElective)
 
     def requestAll(self, newCourses: List[Course]):
         """
@@ -179,18 +214,8 @@ class Student(Individual):
         """
 
         for c in newCourses:
-            if c.courseType == CourseType.CORE:
-                self.addReqCore(c)
-            elif c.courseType == CourseType.ELECTIVE:
-                self.addReqElective(c)
-    
-    def addReqOffPeriod(self, newOff: Course):
-        """
-        Adds a requested off period. Off period must be a course.
-        """
-        if newOff not in self.reqOffPeriods:
-            self.reqOffPeriods.append(newOff)
-            self.reqAll.append(newOff)
+            if c not in self.reqAll:
+                self.reqAll.append(c)
     
     def getGrade(self) -> int:
         """
@@ -198,52 +223,36 @@ class Student(Individual):
         """
         return self.grade
 
-    def getReqCore(self) -> list:
+    def getReqCore(self) -> List[Course]:
         """
         Get requested core Courses.
         """
-        return self.reqCores
+        return [c for c in self.reqAll if c.courseType == CourseType.CORE]
     
-    def getReqElectives(self) -> list:
+    def getReqElectives(self) -> List[Course]:
         """
         Get requested elective Courses.
         """
-        return self.reqElectives
+        return [c for c in self.reqAll if c.courseType == CourseType.ELECTIVE]
     
-    def getReqOff(self) -> list:
+    def getReqOff(self) -> List[Course]:
         """
         Get requested off periods (Courses).
         """
-        return self.reqOffPeriods
+        return [c for c in self.reqAll if c.courseType == CourseType.OFF]
     
-    def removeReqCore(self, core: Course):
+    def removeRequest(self, removed: Course):
         """
-        Removes requested core Course.
+        Removes Course removed from reqAll.
         """
-        if core in self.reqCores:
-            self.reqCores.remove(core)
-            self.reqAll.remove(core)
-    
-    def removeReqElective(self, elective: Course):
-        """
-        Removes requested elective Course.
-        """
-        if elective in self.reqElectives:
-            self.reqElectives.remove(elective)
-            self.reqAll.remove(elective)
-    
-    def removeReqOff(self, off: Course):
-        """
-        Removes requested off Course.
-        """
-        if off in self.reqOffPeriods:
-            self.reqOffPeriods.remove(off)
-            self.reqAll.remove(off)
-    
-    def getReqVector(self, allCourseCodes: list):
+        if removed in self.reqAll:
+            self.reqAll.remove(Course)
+
+    def getReqVector(self, allCourseCodes: List[str]) -> List[int]:
         """
         Returns request vector from a list of all course codes.
         """
+
         ret = []
         codes = [x.courseCode for x in self.reqAll]
         for x in allCourseCodes:
@@ -252,31 +261,38 @@ class Student(Individual):
             else:
                 ret.append(0)
         return ret
-    """
-    TODO: Fix or remove?
-    def getReqCheck(self):
-        Returns a generator checking if the requests all appear.
-        
-        currScheduleVals = list(self.schedule.getSections().values())
-        for course in self.reqAll:
-            yield (currScheduleVals.count(course) == self.reqAll.count(course))
-    """
-    def getConstraints(self, allCourses: list):
+    
+    def getConstraints(self, allCourses: List[str]):
         """
         Yields constraints checking if each of the requested courses appear.
         """
-        for index, courseCode in enumerate(allCourses):
+
+        for course in allCourses:
             isRequested = 0
-            if courseCode in self.reqAll: isRequested = 1
+            if course in self.reqAll: 
+                isRequested = 1
             
             ret = []
             for period in self.schedule.lpVars.keys():
-                ret.append((self.schedule.lpVars[period][index],1))
-            
-            index+=1
-            
-            yield (LpAffineExpression(ret) == isRequested)
+                variable = self.schedule.lpVars[period][int(course.courseCode)]
+                assert isinstance(variable, LpVariable)
+                ret.append(variable)
+            sum_of_ret = summation(ret)
+            assert isinstance(sum_of_ret, LpAffineExpression)
+            assert isinstance(sum_of_ret == isRequested, LpAffineExpression)
 
+            yield sum_of_ret == isRequested
+
+    def addToSection(self, section):
+        section.addStudent(self)
     
+    def getOpenScore(self) -> int:
+        """
+        Returns number of off periods requested that are there.
+        """
 
-            
+        reqOff = [c.courseCode for c in self.getReqOff()]
+        actualOff = [s.courseCode for s in self.schedule.getOffPeriods()]
+
+        return len(list(set(reqOff) & set(actualOff)))
+
