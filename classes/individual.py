@@ -14,8 +14,6 @@ class Individual:
         self.schedule = Schedule(tag, len(allCourses))
         self.reqOffPeriods = 1
         self.allCourses = allCourses
-
-        self.constraint_sequence = self.getConstraints(self.allCourses)
     
     def __str__(self):
         ret = "Individual with tag: " + str(self.tag)
@@ -69,13 +67,6 @@ class Individual:
 
     def getConstraints(self, allCourses):
         raise ValueError("Individual.getConstraints must be overridden for valid call")
-
-    @property
-    def next_constraint(self):
-        try:
-            return next(self.constraint_sequence)
-        except StopIteration as e:
-            return e
 
     def createSections(self):
         """
@@ -177,12 +168,12 @@ class Teacher(Individual):
         return vector
         #raise NotImplementedError("Method not yet implemented")
     
-    def getConstraints(self, allCourses: list):
+    def getConstraints(self):
         """
         Yields constraints determining whether a teacher is qualified for a specific course.
         """
         
-        for course in allCourses:
+        for course in self.allCourses:
             isQualified = 0
             if course.courseCode in self.qualifications: 
                 isQualified = 1
@@ -327,12 +318,12 @@ class Student(Individual):
         for course in self.reqAll:
             yield (currScheduleVals.count(course) == self.reqAll.count(course))
     """
-    def getConstraints(self, allCourses: list):
+    def getConstraints(self):
         """
         Yields constraints checking if each of the requested courses appear.
         """
 
-        for course in allCourses:
+        for course in self.allCourses:
             isRequested = 0
             if course in self.reqAll: 
                 isRequested = 1

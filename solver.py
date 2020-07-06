@@ -69,10 +69,7 @@ def load_students_and_teachers_and_courses():
 # Note: it would be nice if Teacher and Student constructors were more similar
 
 def add_constraints_from_individual(problem, individual, individual_type_string):
-    while True:
-        constraint = individual.next_constraint
-        if isinstance(constraint, StopIteration):
-            break
+    for constraint in individual.getConstraints():
         assertion_message = f"{individual_type_string} constraint was illegal"
         assert isinstance(constraint, LpConstraint), assertion_message
         problem += constraint
