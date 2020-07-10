@@ -1,6 +1,7 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 from enum import Enum
+from utils import summation
 if TYPE_CHECKING:
     from individual import Teacher, Student, Individual
     from schedule import Schedule
@@ -29,6 +30,8 @@ class Course:
         Tests whether Course is equivalent to other Course.
 
         __eq__ allows for use within ==, remove from list, etc.
+        
+        The Python "is" statement overrides this. 
         """
         if isinstance(other, Course):
             return self.courseCode == other.courseCode
@@ -40,7 +43,7 @@ class Course:
         """
         self.reqTotalStudents += 1
     
-    def addTeacher(self, teacher: Teacher):
+    def addTeacher(self, teacher: Teacher): 
         """
         Adds a teacher object to the list of qualified teachers and updates list of potential periods
         """
@@ -56,13 +59,13 @@ class Course:
         """
         return self.courseCode
     
-    def getTeachers(self) -> list:
+    def getTeachers(self) -> List[Teacher]:
         """
         Get teachers qualified to teach class.
         """
         return self.qualifiedTeachers
     
-    def getpotentialPeriods(self) -> list:
+    def getpotentialPeriods(self) -> List[int]:
         """
         Get potential periods for class to occur.
         """
@@ -149,7 +152,7 @@ class Section:
     def changePeriod(self, period: int):
         """
         Changes or adds (depending on whether period is -1 currently) the period.
-        """
+        """ 
         self.period = period
     
     def addStudent(self, student: Student):
@@ -183,7 +186,7 @@ class Section:
         """
         return self.period
     
-    def getStudents(self) -> list:
+    def getStudents(self) -> List[Student]:
         """
         Gets all students currently scheduled for Section.
         """

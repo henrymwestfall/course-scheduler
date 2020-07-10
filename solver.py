@@ -1,4 +1,4 @@
-from pulp import LpProblem, LpAffineExpression, LpVariable
+from pulp import LpProblem, LpAffineExpression, LpVariable, LpConstraint
 from scipy.cluster.vq import vq, kmeans2, whiten
 import numpy as np
 
@@ -6,6 +6,13 @@ from classes.individual import *
 from classes.course import *
 from classes.schedule import *
 from utils import summation
+
+
+def tag_generator():
+    tag = 0
+    while True:
+        yield tag
+        tag += 1
 
 
 def load_students_and_teachers_and_courses():
@@ -38,22 +45,25 @@ def load_students_and_teachers_and_courses():
     rawTeacherQualifications = {i: qualifs for i, qualifs in enumerate(teacher_qualifs)} # map teacher name to qualifications (strings)
     rawTeacherRequestedOpenPeriods = {i: 0 for i in range(len(teacher_qualifs))} # map teacher name to requested open periods
 
+    # create tag generator
+    tg = tag_generator()
 
     # create Courses, Students, and Teachers
     courses = {} # maps course name to object
     for c in rawCourses:
         courses[c[0]] = Course(*c)
+    allCourses = list(courses.values())
 
     students = []
-    for studentName, requestList in rawStudentRequests.items():
-        student = Student(studentName, rawStudentGrades[studentName], rawCourses)
+    for index, requestList in rawStudentRequests.items():
+        student = Student(next(tg), rawStudentGrades[index], allCourses)
         students.append(student)
         student.requestAll([courses[str(c)] for c in requestList])
 
     teachers = []
-    for teacherName, qualifications in rawTeacherQualifications.items():
+    for index, qualifications in rawTeacherQualifications.items():
         qualifications_with_course_objects = [courses[str(q)] for q in qualifications]
-        teacher = Teacher(teacherName, qualifications_with_course_objects, rawTeacherRequestedOpenPeriods[teacherName], list(courses.values()))
+        teacher = Teacher(next(tg), qualifications_with_course_objects, rawTeacherRequestedOpenPeriods[index], allCourses)
         teachers.append(teacher)
 
     return students, teachers, list(courses.values())
@@ -65,15 +75,23 @@ def add_constraints_from_individuals(problem, constraining_students, constrainin
     """
 
     for student in constraining_students:
-        for constraint in student.getConstraints(all_courses): # method not implemented yet
+        while True:
+            constraint = student.next_constraint
+            if isinstance(constraint, StopIteration):
+                break
+            assert isinstance(constraint, LpConstraint), "student constraint was illegal"
             problem += constraint
     for teacher in constraining_teachers:
-        for constraint in teacher.getConstraints(all_courses): # method not implemented yet
+        while True:
+            constraint = teacher.next_constraint
+            if isinstance(constraint, StopIteration):
+                break
+            assert isinstance(constraint, LpConstraint), "teacher constraint was illegal"
             problem += constraint
 
 def define_global_constraints(problem, students, teachers):
     """
-    add constraints that affect multiple individuals simultaneously to problem.
+    add constraints that affect multiple individuals simultaneously to problem. 
     """
 
     # set is ideal, but LpConstraints are unhashable
@@ -91,6 +109,7 @@ def define_global_constraints(problem, students, teachers):
                 all_constraints.append(c)
     
     for c in all_constraints:
+        assert isinstance(c, LpConstraint), "global constraint was illegal"
         problem += c
 
 # create all sections locally in students
@@ -103,21 +122,19 @@ def create_final_sections(students, teachers):
     allExistingSections = []
 
     for individual in students + teachers:
-        individual.schedule.createSections() # method not implemented yet
-        for section in individual.schedule.sections:
+        new_sections = individual.createSections() # method not implemented yet
+        for section in new_sections:
             for existingSection in allExistingSections:
                 if section == existingSection:
                     break
             else:
                 # the section doesn't exist yet, so add it to the existing sections
+                individual.addToSection(section)
                 allExistingSections.append(section)
                 continue
             
             # the section already exists, so add the student/teacher there
-            if isinstance(individual, Teacher):
-                existingSection.setTeacher(individual) # method not implemented yet
-            else:
-                existingSection.addStudent(individual)
+            individual.addToSection(existingSection)
     
     return allExistingSections
 
@@ -128,10 +145,10 @@ def solve():
 
     students, teachers, all_courses = load_students_and_teachers_and_courses()
 
-    problem = LpProblem("Toy Problem")
+    problem = LpProblem("Toy_Problem")
     add_constraints_from_individuals(problem, students, teachers, all_courses)
     define_global_constraints(problem, students, teachers)
-
+    
     status = problem.solve()
     all_existing_sections = create_final_sections(students, teachers)
 
