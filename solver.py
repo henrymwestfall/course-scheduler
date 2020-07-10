@@ -62,14 +62,14 @@ def load_students_and_teachers_and_courses():
 
     students = []
     for index, requestList in rawStudentRequests.items():
-        student = Student(next(tg), rawStudentGrades[index], allCourses)
+        student = Student(next(tg), allCourses, rawStudentGrades[index])
         students.append(student)
         student.requestAll([courses[str(c)] for c in requestList])
 
     teachers = []
     for index, qualifications in rawTeacherQualifications.items():
         qualifications_with_course_objects = [courses[str(q)] for q in qualifications]
-        teacher = Teacher(next(tg), qualifications_with_course_objects, rawTeacherRequestedOpenPeriods[index], allCourses)
+        teacher = Teacher(next(tg), allCourses, qualifications_with_course_objects, rawTeacherRequestedOpenPeriods[index])
         teachers.append(teacher)
 
     return students, teachers, list(courses.values())
