@@ -1,4 +1,4 @@
-from pulp import LpProblem, LpAffineExpression, LpVariable, LpConstraint
+from pulp import LpProblem, LpAffineExpression, LpVariable, LpConstraint, LpStatus
 from scipy.cluster.vq import vq, kmeans2, whiten
 import numpy as np
 
@@ -14,7 +14,6 @@ def tag_generator():
         yield tag
         tag += 1
 
-
 def load_students_and_teachers_and_courses():
     """
     Return a tuple containing a list of Teacher and Student objects.
@@ -24,22 +23,29 @@ def load_students_and_teachers_and_courses():
 
     # load the raw data
     # TODO: load from a file of some sort
+    # student_requests = [
+    #                 [0, 1, 3],
+    #                 [0, 2, 3],
+    #                 [0, 2, 4],
+    #                 [1, 3, 4],
+    #                 [0, 1, 2],
+    #                 [1, 2, 3]
+    # ]
+
+    # teacher_qualifs = [
+    #                 [0, 1, 3],
+    #                 [0, 2, 4],
+    #                 [1, 2, 3]
+    # ]
+    num_courses = 1
     student_requests = [
-                    [0, 1, 3],
-                    [0, 2, 3],
-                    [0, 2, 4],
-                    [1, 3, 4],
-                    [0, 1, 2],
-                    [1, 2, 3]
+        [0]
     ]
-
     teacher_qualifs = [
-                    [0, 1, 3],
-                    [0, 2, 4],
-                    [1, 2, 3]
+        [0]
     ]
 
-    rawCourses = [(str(i), CourseType.CORE) for i in range(5)] # example course already in list
+    rawCourses = [(str(i), CourseType.CORE) for i in range(num_courses)] # example course already in list
     rawStudentRequests = {i: reqs for i, reqs in enumerate(student_requests)} # map student name to requests (strings)
     rawStudentGrades = {i: 12 for i in range(len(student_requests))} # map student name to the grade they're in
     rawTeacherQualifications = {i: qualifs for i, qualifs in enumerate(teacher_qualifs)} # map teacher name to qualifications (strings)
@@ -69,34 +75,29 @@ def load_students_and_teachers_and_courses():
     return students, teachers, list(courses.values())
 # Note: it would be nice if Teacher and Student constructors were more similar
 
+def add_constraints_from_individual(problem, individual, individual_type_string):
+    for constraint in individual.getConstraints():
+        assertion_message = f"{individual_type_string} constraint was illegal"
+        assert isinstance(constraint, LpConstraint), assertion_message
+        problem += constraint
+
 def add_constraints_from_individuals(problem, constraining_students, constraining_teachers, all_courses):
     """
     add constraints from constraining_students and constraining_teachers to problem.
     """
 
     for student in constraining_students:
-        while True:
-            constraint = student.next_constraint
-            if isinstance(constraint, StopIteration):
-                break
-            assert isinstance(constraint, LpConstraint), "student constraint was illegal"
-            problem += constraint
+        add_constraints_from_individual(problem, student, "student")
     for teacher in constraining_teachers:
-        while True:
-            constraint = teacher.next_constraint
-            if isinstance(constraint, StopIteration):
-                break
-            assert isinstance(constraint, LpConstraint), "teacher constraint was illegal"
-            problem += constraint
+        add_constraints_from_individual(problem, teacher, "teacher")
 
-def define_global_constraints(problem, students, teachers):
+def define_sections_need_teachers_constraint(problem, students, teachers):
     """
-    add constraints that affect multiple individuals simultaneously to problem. 
+    define the LpConstraint ensuring that each section assigned to a student
+    has a qualified teacher assigned to it also.
     """
 
-    # set is ideal, but LpConstraints are unhashable
     all_constraints = []
-
     for student in students:
         for period, lpVars in student.schedule.lpVars.items():
             for class_id, attending in enumerate(lpVars):
@@ -107,6 +108,17 @@ def define_global_constraints(problem, students, teachers):
                         teacher_assignment_variables.append(teacher.schedule.lpVars[period][class_id])
                 c = summation(teacher_assignment_variables) >= attending
                 all_constraints.append(c)
+    return all_constraints
+
+def define_global_constraints(problem, students, teachers):
+    """
+    add constraints that affect multiple individuals simultaneously to problem.
+    """
+
+    # set is ideal, but LpConstraints are unhashable
+    all_constraints = []
+
+    all_constraints += define_sections_need_teachers_constraint(problem, students, teachers)
     
     for c in all_constraints:
         assert isinstance(c, LpConstraint), "global constraint was illegal"
@@ -149,10 +161,11 @@ def solve():
     add_constraints_from_individuals(problem, students, teachers, all_courses)
     define_global_constraints(problem, students, teachers)
     
+    print(problem)
     status = problem.solve()
     all_existing_sections = create_final_sections(students, teachers)
 
-    print(f"Solution is {status}")
+    print(f"Solution is {LpStatus[status]}")
     for section in all_existing_sections:
         print(section)
 
