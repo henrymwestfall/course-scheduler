@@ -134,11 +134,11 @@ class Section:
         """
         Return string representation of Section
         """
-        ret = "CourseCode: " + self.courseCode
-        ret += "\n of type: " + str(self.courseType.name)
-        ret += "\n with teacher: " + self.instructor.tag 
-        ret += "\n in period: " + str(self.period)
-        ret += "\n with students: " + str([stu.tag for stu in self.students])
+        ret = f"CourseCode: {self.courseCode}"
+        ret += f"\n\tof type: {self.courseType.name}"
+        ret += f"\n\twith teacher: {self.instructor.tag}"
+        ret += f"\n\tin period: {self.period}"
+        ret += f"\n\twith students: {[stu.tag for stu in self.students]}"
         return ret
 
     def __eq__(self, other) -> bool:

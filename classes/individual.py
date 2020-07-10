@@ -14,8 +14,6 @@ class Individual:
         self.schedule = Schedule(tag, len(allCourses))
         self.reqOffPeriods = 1
         self.allCourses = allCourses
-
-        self.constraint_sequence = self.getConstraints(self.allCourses)
     
     def __str__(self):
         ret = "Individual with tag: " + str(self.tag)
@@ -55,15 +53,18 @@ class Individual:
                 return True
         return False
 
-    def getConstraints(self, allCourses):
-        raise ValueError("Individual.getConstraints must be overridden for valid call")
+    def getConstraints(self):
+        for c in self.getPeriodAttendanceConstraints():
+            yield c
 
-    @property
-    def next_constraint(self):
-        try:
-            return next(self.constraint_sequence)
-        except StopIteration as e:
-            return e
+    def getPeriodAttendanceConstraints(self):
+        """
+        Lazily generate the constraints ensuring that only one section is
+        assigned per period.
+        """
+
+        for courseVariables in self.schedule.lpVars.values():
+            yield summation(courseVariables) <= 1
 
     def createSections(self) -> List[Section]:
         """
