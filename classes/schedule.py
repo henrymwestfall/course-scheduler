@@ -4,7 +4,9 @@ from copy import deepcopy
 from pulp import LpVariable, LpAffineExpression
 from .course import CourseType, Course, Section
 if TYPE_CHECKING:
-    from individual import Teacher, Student, Individual
+    from .individual import Individual
+    from .student import Student
+    from .teacher import Teacher
 
 # Class for storing the schedule associated with any sort of Individual. Uses a dictionary in order to prevent length overflows.
 class Schedule:
@@ -91,7 +93,8 @@ class Schedule:
         for period in self.sections.keys():
             section = self.sections[period]
             hasClass = 0
-            if section!=None and section.courseType != CourseType.OFF: hasClass = 1
+            if section != None and section.courseType != CourseType.OFF:
+                hasClass = 1
             expr = [(var, 1) for var in self.lpVars[period]]
             yield (LpAffineExpression(expr) <= hasClass)
 
