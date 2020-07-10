@@ -3,8 +3,10 @@ from typing import TYPE_CHECKING, List
 from enum import Enum
 from utils import summation
 if TYPE_CHECKING:
-    from individual import Teacher, Student, Individual
-    from schedule import Schedule
+    from .individual import Individual
+    from .student import Student
+    from .teacher import Teacher
+    from .schedule import Schedule
 
 
 # Defines classes relating to courses and sections.
@@ -105,6 +107,20 @@ class Course:
         Remove 1 interested student.
         """
         self.reqTotalStudents -= 1
+    
+    def getGlobalConstr(self):
+        ret = []
+        for teacher in self.qualifiedTeachers:
+            classindex = teacher.allCourses.index(self.courseCode)
+            for p in range(1, 9):
+                ret.append(teacher.schedule.lpVars[p][classindex])
+        if self.reqTotalStudents > 0:
+            attending = 1
+        else:
+            attending = 0
+        return summation(ret) >= attending
+
+
 
 class Section:
     def __init__(self, courseCode: str, courseType: CourseType):
@@ -221,4 +237,3 @@ class Section:
         periodValid = (self.period != -1)
         studentsValid = (len(self.students) > 0)
         return (instructorValid and periodValid and studentsValid)
-
