@@ -1,4 +1,4 @@
-from pulp import LpProblem, LpAffineExpression, LpVariable, LpConstraint
+from pulp import LpProblem, LpAffineExpression, LpVariable, LpConstraint, LpStatus
 from scipy.cluster.vq import vq, kmeans2, whiten
 import numpy as np
 
@@ -23,22 +23,29 @@ def load_students_and_teachers_and_courses():
 
     # load the raw data
     # TODO: load from a file of some sort
+    # student_requests = [
+    #                 [0, 1, 3],
+    #                 [0, 2, 3],
+    #                 [0, 2, 4],
+    #                 [1, 3, 4],
+    #                 [0, 1, 2],
+    #                 [1, 2, 3]
+    # ]
+
+    # teacher_qualifs = [
+    #                 [0, 1, 3],
+    #                 [0, 2, 4],
+    #                 [1, 2, 3]
+    # ]
+    num_courses = 1
     student_requests = [
-                    [0, 1, 3],
-                    [0, 2, 3],
-                    [0, 2, 4],
-                    [1, 3, 4],
-                    [0, 1, 2],
-                    [1, 2, 3]
+        [0]
     ]
-
     teacher_qualifs = [
-                    [0, 1, 3],
-                    [0, 2, 4],
-                    [1, 2, 3]
+        [0]
     ]
 
-    rawCourses = [(str(i), CourseType.CORE) for i in range(5)] # example course already in list
+    rawCourses = [(str(i), CourseType.CORE) for i in range(num_courses)] # example course already in list
     rawStudentRequests = {i: reqs for i, reqs in enumerate(student_requests)} # map student name to requests (strings)
     rawStudentGrades = {i: 12 for i in range(len(student_requests))} # map student name to the grade they're in
     rawTeacherQualifications = {i: qualifs for i, qualifs in enumerate(teacher_qualifs)} # map teacher name to qualifications (strings)
@@ -105,7 +112,7 @@ def define_sections_need_teachers_constraint(problem, students, teachers):
 
 def define_global_constraints(problem, students, teachers):
     """
-    add constraints that affect multiple individuals simultaneously to problem. 
+    add constraints that affect multiple individuals simultaneously to problem.
     """
 
     # set is ideal, but LpConstraints are unhashable
@@ -154,10 +161,11 @@ def solve():
     add_constraints_from_individuals(problem, students, teachers, all_courses)
     define_global_constraints(problem, students, teachers)
     
+    print(problem)
     status = problem.solve()
     all_existing_sections = create_final_sections(students, teachers)
 
-    print(f"Solution is {status}")
+    print(f"Solution is {LpStatus[status]}")
     for section in all_existing_sections:
         print(section)
 
