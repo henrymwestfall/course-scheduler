@@ -23,26 +23,20 @@ def load_students_and_teachers_and_courses():
 
     # load the raw data
     # TODO: load from a file of some sort
-    # student_requests = [
-    #                 [0, 1, 3],
-    #                 [0, 2, 3],
-    #                 [0, 2, 4],
-    #                 [1, 3, 4],
-    #                 [0, 1, 2],
-    #                 [1, 2, 3]
-    # ]
-
-    # teacher_qualifs = [
-    #                 [0, 1, 3],
-    #                 [0, 2, 4],
-    #                 [1, 2, 3]
-    # ]
-    num_courses = 1
+    num_courses = 5
     student_requests = [
-        [0]
+                    [0, 1, 3],
+                    [0, 2, 3],
+                    [0, 2, 4],
+                    [1, 3, 4],
+                    [0, 1, 2],
+                    [1, 2, 3]
     ]
+
     teacher_qualifs = [
-        [0]
+                    [0, 1, 3],
+                    [0, 2, 4],
+                    [1, 2, 3]
     ]
 
     rawCourses = [(str(i), CourseType.CORE) for i in range(num_courses)] # example course already in list
