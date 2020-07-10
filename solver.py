@@ -161,7 +161,6 @@ def solve():
     add_constraints_from_individuals(problem, students, teachers, all_courses)
     define_global_constraints(problem, students, teachers)
     
-    print(problem)
     status = problem.solve()
     all_existing_sections = create_final_sections(students, teachers)
 
