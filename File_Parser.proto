@@ -1,0 +1,18 @@
+syntax = "proto3"; //DO NOT PUSH DASHES ANYWHERE, ONLY UNDERSCORE
+
+package file_parser;
+
+//Define people as id's
+message Person {
+    string name = 1; //Numbers are order of fields
+    string grade = 2;
+    string period_1 = 3;
+    string period_2 = 4;
+    string period_3 = 5;
+    string period_4 = 6;
+    string period_5 = 7;
+    string period_6 = 8;
+    string period_7 = 9;
+    string period_8 = 10;
+    string req_off = 11;
+}
