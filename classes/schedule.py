@@ -11,14 +11,15 @@ if TYPE_CHECKING:
 class Schedule:
     variable_format = "Individual_{tag}_Period_{period}_Course_{course}"
     token_order = ("tag", "period", "course")
+    periods = 8
 
     def __init__(self, tag: int, courseLength: int):
         self.sections = {1: None, 2: None, 3: None, 4: None, 5: None, 6: None, 7: None, 8: None}
         # list saves 240 bytes over dictionary, 32 bytes over numpy array
         # ramifications are that the indexing changes
-        self.lpVars = [None for i in range(8)]
+        self.lpVars = [None for i in range(self.periods)]
         self.tag = tag
-        for period in self.lpVars.keys():
+        for period in range(self.periods):
             ret = []
             for course in range(0, courseLength):
                 name = self.createVariableName(tag, period, course)

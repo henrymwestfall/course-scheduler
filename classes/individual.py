@@ -75,7 +75,7 @@ class Individual:
         assigned per period.
         """
 
-        for courseVariables in self.schedule.lpVars.values():
+        for courseVariables in self.schedule.lpVars:
             yield summation(courseVariables) <= 1
 
     def createSections(self) -> List[Section]:
@@ -85,14 +85,14 @@ class Individual:
         """
 
         sections = []
-        for period_list in self.schedule.lpVars.values():
+        for period_list in self.schedule.lpVars:
             for variable in period_list:
                 if value(variable) == 1:
                     # this course has been assigned at this period
                     tokens = self.schedule.parseVariableName(variable.name)
                     courseCode = tokens["course"]
                     new_section = Section(courseCode, CourseType.CORE) # TODO: put the correct course type
-                    new_section.changePeriod(int(tokens["period"]))
+                    new_section.changePeriod(int(tokens["period"]) + 1) # add 1 to compensate for 0-based indexing
 
                     sections.append(new_section)
         
@@ -197,7 +197,7 @@ class Teacher(Individual):
                 isQualified = 1
             
             varList = []
-            for period in self.schedule.lpVars.keys():
+            for period in range(self.schedule.periods):
                 variable = self.schedule.lpVars[period][int(course.courseCode)]
                 varList.append(variable)
             sumOfVariables = summation(varList)
@@ -304,7 +304,7 @@ class Student(Individual):
                 isRequested = 1
 
             varList = []
-            for period in self.schedule.lpVars.keys():
+            for period in range(self.schedule.periods):
                 variable = self.schedule.lpVars[period][int(course.courseCode)]
                 varList.append(variable)
             sumOfVariables = summation(varList)

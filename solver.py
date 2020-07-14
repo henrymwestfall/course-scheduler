@@ -8,6 +8,10 @@ from classes.schedule import *
 from utils import summation
 
 
+class Solver:
+    def __init__(self):
+        self.problem = None
+
 def tag_generator():
     tag = 0
     while True:
@@ -93,7 +97,7 @@ def define_sections_need_teachers_constraint(problem, students, teachers):
 
     all_constraints = []
     for student in students:
-        for period, lpVars in student.schedule.lpVars.items():
+        for period, lpVars in enumerate(student.schedule.lpVars):
             for class_id, attending in enumerate(lpVars):
                 # get corresponding qualified teachers
                 teacher_assignment_variables = []
