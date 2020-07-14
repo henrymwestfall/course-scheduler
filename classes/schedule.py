@@ -2,6 +2,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, List
 from copy import deepcopy
 from pulp import LpVariable, LpAffineExpression
+import numpy as np
 from .course import CourseType, Course, Section
 if TYPE_CHECKING:
     from individual import Teacher, Student, Individual
@@ -13,7 +14,9 @@ class Schedule:
 
     def __init__(self, tag: int, courseLength: int):
         self.sections = {1: None, 2: None, 3: None, 4: None, 5: None, 6: None, 7: None, 8: None}
-        self.lpVars = {1: None, 2: None, 3: None, 4: None, 5: None, 6: None, 7: None, 8: None}
+        # list saves 240 bytes over dictionary, 32 bytes over numpy array
+        # ramifications are that the indexing changes
+        self.lpVars = [None for i in range(8)]
         self.tag = tag
         for period in self.lpVars.keys():
             ret = []
@@ -21,7 +24,7 @@ class Schedule:
                 name = self.createVariableName(tag, period, course)
                 newVar = LpVariable(name, lowBound=0, upBound=1, cat="Integer") # add constraining values and type
                 ret.append(newVar)
-            self.lpVars[period] = ret
+            self.lpVars[period] = np.array(ret) # array saves 928 bytes over list
 
     def createVariableName(self, tag, period, course):
         """
