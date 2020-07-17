@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto3',
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n\x11\x46ile_Parser.proto\x12\x0b\x66ile_parser\"\xb5\x01\n\x06Person\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\r\n\x05grade\x18\x02 \x01(\t\x12\x10\n\x08period_1\x18\x03 \x01(\t\x12\x10\n\x08period_2\x18\x04 \x01(\t\x12\x10\n\x08period_3\x18\x05 \x01(\t\x12\x10\n\x08period_4\x18\x06 \x01(\t\x12\x10\n\x08period_5\x18\x07 \x01(\t\x12\x10\n\x08period_6\x18\x08 \x01(\t\x12\x10\n\x08period_7\x18\t \x01(\t\x12\x10\n\x08period_8\x18\n \x01(\tb\x06proto3'
+  serialized_pb=b'\n\x11\x46ile_Parser.proto\x12\x0b\x66ile_parser\"\xc6\x01\n\x06Person\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\r\n\x05grade\x18\x02 \x01(\t\x12\x10\n\x08period_1\x18\x03 \x01(\t\x12\x10\n\x08period_2\x18\x04 \x01(\t\x12\x10\n\x08period_3\x18\x05 \x01(\t\x12\x10\n\x08period_4\x18\x06 \x01(\t\x12\x10\n\x08period_5\x18\x07 \x01(\t\x12\x10\n\x08period_6\x18\x08 \x01(\t\x12\x10\n\x08period_7\x18\t \x01(\t\x12\x10\n\x08period_8\x18\n \x01(\t\x12\x0f\n\x07req_off\x18\x0b \x03(\tb\x06proto3'
 )
 
 
@@ -103,6 +103,13 @@ _PERSON = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='req_off', full_name='file_parser.Person.req_off', index=10,
+      number=11, type=9, cpp_type=9, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
   ],
   extensions=[
   ],
@@ -116,7 +123,7 @@ _PERSON = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=35,
-  serialized_end=216,
+  serialized_end=233,
 )
 
 DESCRIPTOR.message_types_by_name['Person'] = _PERSON
