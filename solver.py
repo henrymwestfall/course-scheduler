@@ -2,7 +2,8 @@ from pulp import LpProblem, LpAffineExpression, LpVariable, LpConstraint, LpStat
 from scipy.cluster.vq import vq, kmeans2, whiten
 import numpy as np
 
-from classes.individual import *
+from classes.student import Student
+from classes.teacher import Teacher
 from classes.course import *
 from classes.schedule import *
 from utils import summation
