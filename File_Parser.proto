@@ -14,5 +14,5 @@ message Person {
     string period_6 = 8;
     string period_7 = 9;
     string period_8 = 10;
-    string req_off = 11;
+    repeated string req_off = 11;
 }
