@@ -1,13 +1,13 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING, List
-
-from .individual import Individual
+from pulp import LpVariable, LpAffineExpression, value
+from .schedule import Schedule
+from .course import CourseType, Section
 from utils import summation
-
+from .individual import Individual
 if TYPE_CHECKING:
-    from .course import Course, Section
-
-
+    from .course import Course
+    
 class Teacher(Individual):
     def __init__(self, tag: int, allCourses: List[str], qualifications: List[str], openPeriods: list):
         super().__init__(tag, allCourses)
@@ -41,7 +41,9 @@ class Teacher(Individual):
         """
 
         res = self.schedule.addSection(newSection)
-        if res: self.openPeriods.remove(newSection.period)
+        if res:
+            self.openPeriods.remove(newSection.period)
+            self.addToSection(newSection)
     
     def removeSection(self, section: Section):
         """
@@ -49,6 +51,7 @@ class Teacher(Individual):
         """
 
         self.schedule.removeSection(section)
+        section.instructor = None
         self.openPeriods.append(section.period)
         self.openPeriods.sort()
     

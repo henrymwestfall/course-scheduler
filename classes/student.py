@@ -1,17 +1,32 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING, List
-
-from .individual import Individual
+from pulp import LpVariable, LpAffineExpression, value
+from .schedule import Schedule
+from .course import CourseType, Section
 from utils import summation
-
+from .individual import Individual
 if TYPE_CHECKING:
-    from .course import Course, Section
-
+    from .course import Course
+    
 class Student(Individual):
     def __init__(self, tag: int, allCourses: List[str], grade: int):
         super().__init__(tag, allCourses)
         self.grade = grade
         self.reqAll = []
+
+    def addSection(self, newSection: Section):
+        """
+        Adds a section
+        """
+        res = self.schedule.addSection(newSection)
+        if res:
+            self.addToSection(newSection)
+    
+    def removeSection(self, section: Section):
+        """
+        Removes a section. Does not require period number.
+        """
+        self.schedule.removeSection(section)
 
     def requestAll(self, newCourses: List[Course]):
         """

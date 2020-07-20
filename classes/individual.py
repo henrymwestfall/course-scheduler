@@ -32,18 +32,6 @@ class Individual:
         """
         return self.reqOffPeriods
     
-    def addSection(self, newSection: Section):
-        """
-        Adds a section
-        """
-        x = self.schedule.addSection(newSection)
-    
-    def removeSection(self, section: Section):
-        """
-        Removes a section. Does not require period number.
-        """
-        self.schedule.removeSection(section)
-    
     def getSections(self):
         """
         Returns all the schedule along with empty periods.
