@@ -10,6 +10,7 @@ Inputs
 """
 
 import random
+import numpy as np
 
 from classes.teacher import Teacher
 from classes.student import Student
@@ -35,6 +36,10 @@ class ToyProblem:
         self.teachers = self.create_blank_students()
         self.students = self.create_blank_students()
 
+        print(f"{self.pathways}\n")
+        for _ in range(5):
+            print(self.create_request_or_qualification_list)
+
 
     def tag_generator(self):
         while True:
@@ -55,7 +60,8 @@ class ToyProblem:
         all_courses = [Course(c, CourseType.CORE) for c in range(self.num_courses)]
         pathways = [[] for _ in range(self.num_pathways)]
         for c in all_courses:
-            random.choice(pathways).append(c)
+            # add it to the shortest pathway to keep them mostly even
+            min(pathways, key=lambda p: len(p)).append(c)
         return all_courses, pathways
 
     def create_blank_individuals(self, count, individual_type):
@@ -73,3 +79,22 @@ class ToyProblem:
 
     def create_blank_students(self):
         return self.create_blank_individuals(self.num_students, Student)
+
+    def create_request_or_qualification_list(self):
+        course_list = []
+
+        shortest_pathway_length = len(min(self.pathways, key=lambda p: len(p)))
+        level = random.randint(0, shortest_pathway_length - 1)
+
+        for pathway in self.pathways:
+            # create selection weights
+            weights = [1 / abs(index - level) for index, pathway in enumerate(pathway)]
+            sum_weights = sum(weights)
+            normalized = [w / sum_weights for w in weights]
+            
+            course = np.random.choice(pathway, normalized)
+            course_list.append(course)
+        
+        return course_list
+
+ToyProblem(3, 5, 6, 3, 2)
