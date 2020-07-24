@@ -7,6 +7,7 @@ from utils import summation
 from .individual import Individual
 if TYPE_CHECKING:
     from .course import Course
+    
 class Student(Individual):
     __slots__ = ["tag", "allCourses", "grade"]
     def __init__(self, tag: int, allCourses: List[str], grade: int):
@@ -82,27 +83,44 @@ class Student(Individual):
             else:
                 ret.append(0)
         return ret
-    
-    def getConstraints(self, allCourses: List[str]):
+    """
+    TODO: Fix or remove?
+    def getReqCheck(self):
+        Returns a generator checking if the requests all appear.
+        
+        currScheduleVals = list(self.schedule.getSections().values())
+        for course in self.reqAll:
+            yield (currScheduleVals.count(course) == self.reqAll.count(course))
+    """
+    def getConstraints(self):
         """
-        Yields constraints checking if each of the requested courses appear.
+        Lazily generate all constraints by calling other constraint generator
+        methods.
         """
 
-        for course in allCourses:
+        for c in super().getConstraints():
+            yield c
+
+        for c in self.getRequestCheckConstraints():
+            yield c
+
+    def getRequestCheckConstraints(self):
+        """
+        Lazily generate constraints checking if requested courses appear
+        """
+
+        for course in self.allCourses:
             isRequested = 0
-            if course in self.reqAll: 
+            if course in self.reqAll:
                 isRequested = 1
-            
-            ret = []
-            for period in self.schedule.lpVars.keys():
-                variable = self.schedule.lpVars[period][int(course.courseCode)]
-                assert isinstance(variable, LpVariable)
-                ret.append(variable)
-            sum_of_ret = summation(ret)
-            assert isinstance(sum_of_ret, LpAffineExpression)
-            assert isinstance(sum_of_ret == isRequested, LpAffineExpression)
 
-            yield sum_of_ret == isRequested
+            varList = []
+            for period in range(self.schedule.periods):
+                variable = self.schedule.lpVars[period][int(course.courseCode)]
+                varList.append(variable)
+            sumOfVariables = summation(varList)
+
+            yield sumOfVariables == isRequested
 
     def addToSection(self, section):
         section.addStudent(self)
@@ -116,7 +134,6 @@ class Student(Individual):
         actualOff = [s.courseCode for s in self.schedule.getOffPeriods()]
 
         return len(list(set(reqOff) & set(actualOff)))
-        # The above is a handy way of getting the combined information of two lists
 
     def getElectiveScore(self) -> int:
         reqElective = [c.courseCode for c in self.getReqElectives()]

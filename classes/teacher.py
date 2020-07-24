@@ -7,6 +7,7 @@ from utils import summation
 from .individual import Individual
 if TYPE_CHECKING:
     from .course import Course
+    
 class Teacher(Individual):
     __slots__ = ["tag", "allCourses", "qualifications", "openPeriods"]
     def __init__(self, tag: int, allCourses: List[str], qualifications: List[str], openPeriods: list):
@@ -75,29 +76,39 @@ class Teacher(Individual):
 
         return vector
     
-    def getConstraints(self, allCourses: List[str]):
+    def getConstraints(self):
         """
-        Yields constraints determining whether a teacher is qualified for a specific course.
+        Lazily generate all constraints by calling other constraint generator
+        methods.
         """
-        
-        for course in allCourses:
+
+        for c in super().getConstraints():
+            yield c
+
+        for c in self.getQualifiedTeachingConstraints():
+            yield c
+
+
+    def getQualifiedTeachingConstraints(self):
+        """
+        Lazily generate constraints ensuring this teacher only teaches sections
+        that they are qualified to teach.
+        """
+
+        for course in self.allCourses:
             isQualified = 0
-            if course.courseCode in self.qualifications: 
+            if course in self.qualifications:
                 isQualified = 1
             
-            ret = []
-            for period in self.schedule.lpVars.keys():
+            varList = []
+            for period in range(self.schedule.periods):
                 variable = self.schedule.lpVars[period][int(course.courseCode)]
-                assert isinstance(variable, LpVariable)
-                ret.append(variable)
-            sum_of_ret = summation(ret)
+                varList.append(variable)
+            sumOfVariables = summation(varList)
 
-            assert isinstance(sum_of_ret, LpAffineExpression)
-            assert isinstance(sum_of_ret == isQualified, LpAffineExpression)
-
-            yield (sum_of_ret <= isQualified)
+            yield sumOfVariables <= isQualified
     
-    def addToSection(self, section: Section):
+    def addToSection(self, section):
         section.changeInstructor(self)
     
     def getOpenScore(self) -> int:
@@ -105,4 +116,3 @@ class Teacher(Individual):
         Returns number of off periods
         """
         return len(self.openPeriods)
-
