@@ -17,18 +17,18 @@ class Schedule:
 
     __slots__ = ["tag", "courseLength"]
     def __init__(self, tag: int, courseLength: int):
-        self.sections = {1: None, 2: None, 3: None, 4: None, 5: None, 6: None, 7: None, 8: None}
+        self._sections = {1: None, 2: None, 3: None, 4: None, 5: None, 6: None, 7: None, 8: None}
         # list saves 240 bytes over dictionary, 32 bytes over numpy array
         # ramifications are that the indexing changes
-        self.lpVars = [None for i in range(self.periods)]
-        self.tag = tag
+        self._lpVars = [None for i in range(self.periods)]
+        self._tag = tag
         for period in range(self.periods):
             ret = []
             for course in range(0, courseLength):
                 name = self.createVariableName(tag, period, course)
                 newVar = LpVariable(name, lowBound=0, upBound=1, cat="Integer") # add constraining values and type
                 ret.append(newVar)
-            self.lpVars[period] = np.array(ret) # array saves 928 bytes over list
+            self._lpVars[period] = np.array(ret) # array saves 928 bytes over list
 
     def createVariableName(self, tag, period, course):
         """
@@ -52,7 +52,7 @@ class Schedule:
         return tokens
 
     def __str__(self):
-        ret = deepcopy(self.sections)
+        ret = deepcopy(self._sections)
         for period in ret.keys():
             ret[period] = str(ret[period])
         return str(ret)
@@ -62,8 +62,8 @@ class Schedule:
         Returns list of open periods (ints).
         """
         ret = []
-        for period in self.sections.keys():
-            if self.sections[period] == None:
+        for period in self._sections.keys():
+            if self._sections[period] == None:
                 ret.append(period)
         return ret
     
@@ -71,15 +71,15 @@ class Schedule:
         """
         Returns dict of current sections.
         """
-        return self.sections
+        return self._sections
     
     def addSection(self, newSection: Section) -> bool:
         """
         Adds a section at position pos. Does not work if the period is already filled. Returns True if successfully completed.
         """
         pos = newSection.period
-        if self.sections[pos]==None and newSection not in self.sections.values():
-            self.sections[pos] = newSection
+        if self._sections[pos]==None and newSection not in self._sections.values():
+            self._sections[pos] = newSection
             return True
         return False
     
@@ -88,26 +88,26 @@ class Schedule:
         Removes a section by the Section object. Replaces with None.
         """
         pos = section.period
-        if self.sections[pos] == section:
-            self.sections[pos] = None
+        if self._sections[pos] == section:
+            self._sections[pos] = None
 
     def getValidityConstr(self):
         """
         Yields expressions of if periods have 0 or 1 class.
         """
-        for period in self.sections.keys():
-            section = self.sections[period]
+        for period in self._sections.keys():
+            section = self._sections[period]
             hasClass = 0
             if section != None and section.courseType != CourseType.OFF:
                 hasClass = 1
-            expr = [(var, 1) for var in self.lpVars[period]]
+            expr = [(var, 1) for var in self._lpVars[period]]
             yield (LpAffineExpression(expr) <= hasClass)
 
     def haveTeachers(self):
         """
         Checks if all Sections have a qualified teacher.
         """
-        for section in self.sections.values():
+        for section in self._sections.values():
             if section != None and section.courseType != CourseType.OFF:
                 yield section.isValid()
                 

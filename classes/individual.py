@@ -11,45 +11,45 @@ if TYPE_CHECKING:
 class Individual:
     __slots__ = ["tag", "allCourses"]
     def __init__(self, tag: int, allCourses: List[Course]):
-        self.tag = tag
-        self.schedule = Schedule(tag, len(allCourses))
-        self.reqOffPeriods = 1
-        self.allCourses = allCourses
+        self._tag = tag
+        self._schedule = Schedule(tag, len(allCourses))
+        self._reqOffPeriods = 1
+        self._allCourses = allCourses
     
     def __str__(self):
-        ret = "Individual with tag: " + str(self.tag)
-        ret += "\n with schedule: " + str(self.schedule)
+        ret = "Individual with tag: " + str(self._tag)
+        ret += "\n with schedule: " + str(self._schedule)
         return ret
 
     def changeReqOff(self, newReq: int):
         """
         Changes number of requested off periods.
         """
-        self.reqOffPeriods = newReq
+        self._reqOffPeriods = newReq
     
     def getReqOff(self) -> int:
         """
         Obtains number of requested off periods.
         """
-        return self.reqOffPeriods
+        return self._reqOffPeriods
     
     def getSections(self):
         """
         Returns all the schedule along with empty periods.
         """
-        return self.schedule.getSections()
+        return self._schedule.getSections()
     
     def getOffDelta(self):
         """
         Positive when more scheduled off than required, negative when fewer scheduled off than required
         """
-        return (len(self.schedule.getOpenPeriods()) - self.reqOffPeriods)
+        return (len(self._schedule.getOpenPeriods()) - self._reqOffPeriods)
     
     def hasPotentialLunchSlot(self, lunchPeriods: List[int]):
         """
         Return whether there is an open period in the potential lunch periods.
         """
-        for period in self.schedule.getOpenPeriods():
+        for period in self._schedule.getOpenPeriods():
             if period in lunchPeriods:
                 return True
         return False
@@ -64,7 +64,7 @@ class Individual:
         assigned per period.
         """
 
-        for courseVariables in self.schedule.lpVars:
+        for courseVariables in self._schedule.lpVars:
             yield summation(courseVariables) <= 1
 
     def createSections(self) -> List[Section]:
@@ -74,11 +74,11 @@ class Individual:
         """
 
         sections = []
-        for period_list in self.schedule.lpVars:
+        for period_list in self._schedule.lpVars:
             for variable in period_list:
                 if value(variable) == 1:
                     # this course has been assigned at this period
-                    tokens = self.schedule.parseVariableName(variable.name)
+                    tokens = self._schedule.parseVariableName(variable.name)
                     courseCode = tokens["course"]
                     new_section = Section(courseCode, CourseType.CORE) # TODO: put the correct course type
                     new_section.changePeriod(int(tokens["period"]) + 1) # add 1 to compensate for 0-based indexing

@@ -128,6 +128,14 @@ class Problem:
                             teacher_assignment_variables.append(teacher.schedule.lpVars[period][class_id])
                     c = summation(teacher_assignment_variables) >= attending
                     all_constraints.append(c)
+        """
+        Using getGlobalConstr:
+
+        allConstrs = []
+        for course in self.courses:
+            allConstrs.append(course.getGlobalConstr())
+        return allConstrs
+        """
         return all_constraints
 
     def define_global_constraints(self):
