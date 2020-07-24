@@ -8,10 +8,12 @@ from .individual import Individual
 if TYPE_CHECKING:
     from .course import Course
 class Student(Individual):
+    __slots__ = ["tag", "allCourses", "grade"]
     def __init__(self, tag: int, allCourses: List[str], grade: int):
         super().__init__(tag, allCourses)
         self.grade = grade
         self.reqAll = []
+        self.altElectives = []
 
     def addSection(self, newSection: Section):
         """
@@ -116,3 +118,22 @@ class Student(Individual):
         return len(list(set(reqOff) & set(actualOff)))
         # The above is a handy way of getting the combined information of two lists
 
+    def getElectiveScore(self) -> int:
+        reqElective = [c.courseCode for c in self.getReqElectives()]
+        actualScore = 0
+        for s in self.schedule.sections.keys():
+            if s.courseType == CourseType.ELECTIVE:
+                if s in self.getReqElectives():
+                    actualScore += 5
+                elif s in self.altElectives:
+                    actualScore += 1
+        return actualScore
+
+    def addAltElective(self, elective: Course):
+        if not elective in self.altElectives:
+            self.altElectives.append(elective)
+    
+    def removeAltElective(self, elective: Course):
+        if elective in self.altElectives:
+            self.altElectives.append(elective)
+    

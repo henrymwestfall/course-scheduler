@@ -19,6 +19,7 @@ class CourseType(Enum):
     OFF = 2
 
 class Course:
+    __slots__ = ["courseCode", "courseType"]
     def __init__(self, courseCode: str, courseType: CourseType):
         self.courseCode = courseCode
         self.qualifiedTeachers = []
@@ -123,6 +124,7 @@ class Course:
 
 
 class Section:
+    __slots__ = ["courseCode", "courseType"]
     def __init__(self, courseCode: str, courseType: CourseType):
         self.courseCode = courseCode
         self.courseType = courseType

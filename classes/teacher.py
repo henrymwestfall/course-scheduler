@@ -8,6 +8,7 @@ from .individual import Individual
 if TYPE_CHECKING:
     from .course import Course
 class Teacher(Individual):
+    __slots__ = ["tag", "allCourses", "qualifications", "openPeriods"]
     def __init__(self, tag: int, allCourses: List[str], qualifications: List[str], openPeriods: list):
         super().__init__(tag, allCourses)
         self.qualifications = qualifications

@@ -15,6 +15,7 @@ class Schedule:
     token_order = ("tag", "period", "course")
     periods = 8
 
+    __slots__ = ["tag", "courseLength"]
     def __init__(self, tag: int, courseLength: int):
         self.sections = {1: None, 2: None, 3: None, 4: None, 5: None, 6: None, 7: None, 8: None}
         # list saves 240 bytes over dictionary, 32 bytes over numpy array

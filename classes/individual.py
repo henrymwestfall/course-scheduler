@@ -9,6 +9,7 @@ if TYPE_CHECKING:
 
 # Base class Individual and inheriting classes Student and Teacher for storing information for people.
 class Individual:
+    __slots__ = ["tag", "allCourses"]
     def __init__(self, tag: int, allCourses: List[Course]):
         self.tag = tag
         self.schedule = Schedule(tag, len(allCourses))
