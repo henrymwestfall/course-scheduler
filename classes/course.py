@@ -19,7 +19,7 @@ class CourseType(Enum):
     OFF = 2
 
 class Course:
-    __slots__ = ["courseCode", "courseType"]
+    __slots__ = ["_courseCode", "_qualifiedTeachers", "_potentialPeriods", "_reqTotalStudents","_courseType"]
     def __init__(self, courseCode: str, courseType: CourseType):
         self._courseCode = courseCode
         self._qualifiedTeachers = []
@@ -37,7 +37,7 @@ class Course:
         The Python "is" statement overrides this. 
         """
         if isinstance(other, Course):
-            return self._courseCode == other.courseCode
+            return self._courseCode == other._courseCode
         return False
     
     def addReqStudent(self):
@@ -124,7 +124,7 @@ class Course:
 
 
 class Section:
-    __slots__ = ["courseCode", "courseType"]
+    __slots__ = ["_courseCode", "_courseType", "_instructor", "_period", "_students"]
     def __init__(self, courseCode: str, courseType: CourseType):
         self._courseCode = courseCode
         self._courseType = courseType
@@ -138,9 +138,9 @@ class Section:
         """
         ret = f"CourseCode: {self._courseCode}"
         ret += f"\n\tof type: {self._courseType.name}"
-        ret += f"\n\twith teacher: {self._instructor.tag}"
+        ret += f"\n\twith teacher: {self._instructor._tag}"
         ret += f"\n\tin period: {self._period}"
-        ret += f"\n\twith students: {[stu.tag for stu in self._students]}"
+        ret += f"\n\twith students: {[stu._tag for stu in self._students]}"
         return ret
 
     def __eq__(self, other) -> bool:
@@ -148,10 +148,10 @@ class Section:
         Returns whether a Section is the same as another, excluding students.
         """
         if isinstance(other, Section):
-            codeCorrect = (self._courseCode == other.courseCode)
-            instructorCorrect = (self._instructor == other.instructor)
-            courseTypeCorrect = (self._courseType == other.courseType)
-            periodCorrect = (self._period == other.period)
+            codeCorrect = (self._courseCode == other._courseCode)
+            instructorCorrect = (self._instructor == other._instructor)
+            courseTypeCorrect = (self._courseType == other._courseType)
+            periodCorrect = (self._period == other._period)
             return (codeCorrect and instructorCorrect and courseTypeCorrect and periodCorrect)
         return False
 

@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from .course import Course
     
 class Student(Individual):
-    __slots__ = ["tag", "allCourses", "grade"]
+    __slots__ = ["_tag", "_schedule", "_reqOffPeriods", "_allCourses", "_grade", "_reqAll", "_altElectives"]
     def __init__(self, tag: int, allCourses: List[str], grade: int):
         super().__init__(tag, allCourses)
         self._grade = grade
@@ -116,7 +116,7 @@ class Student(Individual):
 
             varList = []
             for period in range(self._schedule.periods):
-                variable = self._schedule.lpVars[period][int(course.courseCode)]
+                variable = self._schedule._lpVars[period][int(course._courseCode)]
                 varList.append(variable)
             sumOfVariables = summation(varList)
 

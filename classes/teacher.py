@@ -9,11 +9,11 @@ if TYPE_CHECKING:
     from .course import Course
     
 class Teacher(Individual):
-    __slots__ = ["tag", "allCourses", "qualifications", "openPeriods"]
+    __slots__ = ["_tag", "_allCourses", "_qualifications", "_openPeriods"]
     def __init__(self, tag: int, allCourses: List[str], qualifications: List[str], openPeriods: list):
         super().__init__(tag, allCourses)
-        self.qualifications = qualifications
-        self.openPeriods = openPeriods
+        self._qualifications = qualifications
+        self._openPeriods = openPeriods
     
     def isQualified(self, courseCode: str) -> bool:
         """
@@ -69,11 +69,10 @@ class Teacher(Individual):
         """
         Returns (eager) of the teacher's qualifications
         """
-        vector = [0] * len(self.allCourses)
-        for course in self.qualifications:
-            index = self.allCourses.index(course)
+        vector = [0] * len(self._allCourses)
+        for course in self._qualifications:
+            index = self._allCourses.index(course)
             vector[index] = 1
-
         return vector
     
     def getConstraints(self):
@@ -95,14 +94,14 @@ class Teacher(Individual):
         that they are qualified to teach.
         """
 
-        for course in self.allCourses:
+        for course in self._allCourses:
             isQualified = 0
-            if course in self.qualifications:
+            if course in self._qualifications:
                 isQualified = 1
             
             varList = []
-            for period in range(self.schedule.periods):
-                variable = self.schedule.lpVars[period][int(course.courseCode)]
+            for period in range(self._schedule.periods):
+                variable = self._schedule._lpVars[period][int(course._courseCode)]
                 varList.append(variable)
             sumOfVariables = summation(varList)
 

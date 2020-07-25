@@ -9,7 +9,7 @@ if TYPE_CHECKING:
 
 # Base class Individual and inheriting classes Student and Teacher for storing information for people.
 class Individual:
-    __slots__ = ["tag", "allCourses"]
+    __slots__ = ["_tag", "_schedule", "_reqOffPeriods", "_allCourses"]
     def __init__(self, tag: int, allCourses: List[Course]):
         self._tag = tag
         self._schedule = Schedule(tag, len(allCourses))
@@ -64,7 +64,7 @@ class Individual:
         assigned per period.
         """
 
-        for courseVariables in self._schedule.lpVars:
+        for courseVariables in self._schedule._lpVars:
             yield summation(courseVariables) <= 1
 
     def createSections(self) -> List[Section]:
@@ -74,7 +74,7 @@ class Individual:
         """
 
         sections = []
-        for period_list in self._schedule.lpVars:
+        for period_list in self._schedule._lpVars:
             for variable in period_list:
                 if value(variable) == 1:
                     # this course has been assigned at this period
