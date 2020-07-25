@@ -10,12 +10,15 @@ if TYPE_CHECKING:
     
 class Student(Individual):
     __slots__ = ["_tag", "_schedule", "_reqOffPeriods", "_allCourses", "_grade", "_reqAll", "_altElectives"]
-    def __init__(self, tag: int, allCourses: List[str], grade: int):
+    def __init__(self, tag: int, allCourses: List[str]):
         super().__init__(tag, allCourses)
-        self._grade = grade
+        self._grade = 0
         self._reqAll = []
         self._altElectives = []
-        
+    
+    def addGrade(self, grade: int):
+        self._grade = grade
+    
     def addSection(self, newSection: Section):
         """
         Adds a section

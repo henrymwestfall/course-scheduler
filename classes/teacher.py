@@ -10,11 +10,27 @@ if TYPE_CHECKING:
     
 class Teacher(Individual):
     __slots__ = ["_tag", "_allCourses", "_qualifications", "_openPeriods"]
-    def __init__(self, tag: int, allCourses: List[str], qualifications: List[str], openPeriods: list):
+    def __init__(self, tag: int, allCourses: List[str]):
         super().__init__(tag, allCourses)
-        self._qualifications = qualifications
-        self._openPeriods = openPeriods
+        self._qualifications = []
+        self._openPeriods = []
     
+    def addQualification(self, qual: str):
+        if qual not in self._qualifications:
+            self._qualifications.append(qual)
+    
+    def remQualification(self, qual: str):
+        if qual in self._qualifications:
+            self._qualifications.remove(qual)
+    
+    def addOpenPeriod(self, period: int):
+        if period not in self._openPeriods:
+            self._openPeriods.append(period)
+    
+    def remOpenPeriod(self, period: int):
+        if period in self._openPeriods:
+            self._openPeriods.remove(period)
+
     def isQualified(self, courseCode: str) -> bool:
         """
         Returns whether a teacher is qualified for a particular courseCode.
