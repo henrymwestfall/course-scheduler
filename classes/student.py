@@ -9,16 +9,21 @@ if TYPE_CHECKING:
     from .course import Course
     
 class Student(Individual):
-    def __init__(self, tag: int, allCourses: List[str], grade: int):
+    __slots__ = ["_tag", "_schedule", "_reqOffPeriods", "_allCourses", "_grade", "_reqAll", "_altElectives"]
+    def __init__(self, tag: int, allCourses: List[str]):
         super().__init__(tag, allCourses)
-        self.grade = grade
-        self.reqAll = []
-
+        self._grade = 0
+        self._reqAll = []
+        self._altElectives = []
+    
+    def addGrade(self, grade: int):
+        self._grade = grade
+    
     def addSection(self, newSection: Section):
         """
         Adds a section
         """
-        res = self.schedule.addSection(newSection)
+        res = self._schedule.addSection(newSection)
         if res:
             self.addToSection(newSection)
     
@@ -26,7 +31,7 @@ class Student(Individual):
         """
         Removes a section. Does not require period number.
         """
-        self.schedule.removeSection(section)
+        self._schedule.removeSection(section)
 
     def requestAll(self, newCourses: List[Course]):
         """
@@ -34,39 +39,39 @@ class Student(Individual):
         """
 
         for c in newCourses:
-            if c not in self.reqAll:
-                self.reqAll.append(c)
+            if c not in self._reqAll:
+                self._reqAll.append(c)
     
     def getGrade(self) -> int:
         """
         Get grade that student is going into.
         """
-        return self.grade
+        return self._grade
 
     def getReqCore(self) -> List[Course]:
         """
         Get requested core Courses.
         """
-        return [c for c in self.reqAll if c.courseType == CourseType.CORE]
+        return [c for c in self._reqAll if c.courseType == CourseType.CORE]
     
     def getReqElectives(self) -> List[Course]:
         """
         Get requested elective Courses.
         """
-        return [c for c in self.reqAll if c.courseType == CourseType.ELECTIVE]
+        return [c for c in self._reqAll if c.courseType == CourseType.ELECTIVE]
     
     def getReqOff(self) -> List[Course]:
         """
         Get requested off periods (Courses).
         """
-        return [c for c in self.reqAll if c.courseType == CourseType.OFF]
+        return [c for c in self._reqAll if c.courseType == CourseType.OFF]
     
     def removeRequest(self, removed: Course):
         """
         Removes Course removed from reqAll.
         """
-        if removed in self.reqAll:
-            self.reqAll.remove(Course)
+        if removed in self._reqAll:
+            self._reqAll.remove(Course)
 
     def getReqVector(self, allCourseCodes: List[str]) -> List[int]:
         """
@@ -74,7 +79,7 @@ class Student(Individual):
         """
 
         ret = []
-        codes = [x.courseCode for x in self.reqAll]
+        codes = [x.courseCode for x in self._reqAll]
         for x in allCourseCodes:
             if x in codes:
                 ret.append(1)
@@ -86,9 +91,9 @@ class Student(Individual):
     def getReqCheck(self):
         Returns a generator checking if the requests all appear.
         
-        currScheduleVals = list(self.schedule.getSections().values())
-        for course in self.reqAll:
-            yield (currScheduleVals.count(course) == self.reqAll.count(course))
+        currScheduleVals = list(self._schedule.getSections().values())
+        for course in self._reqAll:
+            yield (currScheduleVals.count(course) == self._reqAll.count(course))
     """
     def getConstraints(self):
         """
@@ -107,14 +112,14 @@ class Student(Individual):
         Lazily generate constraints checking if requested courses appear
         """
 
-        for course in self.allCourses:
+        for course in self._allCourses:
             isRequested = 0
-            if course in self.reqAll:
+            if course in self._reqAll:
                 isRequested = 1
 
             varList = []
-            for period in range(self.schedule.periods):
-                variable = self.schedule.lpVars[period][int(course.courseCode)]
+            for period in range(self._schedule.periods):
+                variable = self._schedule._lpVars[period][int(course._courseCode)]
                 varList.append(variable)
             sumOfVariables = summation(varList)
 
@@ -129,7 +134,26 @@ class Student(Individual):
         """
 
         reqOff = [c.courseCode for c in self.getReqOff()]
-        actualOff = [s.courseCode for s in self.schedule.getOffPeriods()]
+        actualOff = [s.courseCode for s in self._schedule.getOffPeriods()]
 
         return len(list(set(reqOff) & set(actualOff)))
 
+    def getElectiveScore(self) -> int:
+        reqElective = [c.courseCode for c in self.getReqElectives()]
+        actualScore = 0
+        for s in self._schedule.sections.keys():
+            if s.courseType == CourseType.ELECTIVE:
+                if s in self.getReqElectives():
+                    actualScore += 5
+                elif s in self._altElectives:
+                    actualScore += 1
+        return actualScore
+
+    def addAltElective(self, elective: Course):
+        if not elective in self._altElectives:
+            self._altElectives.append(elective)
+    
+    def removeAltElective(self, elective: Course):
+        if elective in self._altElectives:
+            self._altElectives.append(elective)
+    

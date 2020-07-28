@@ -119,15 +119,23 @@ class Problem:
 
         all_constraints = []
         for student in self.students:
-            for period, lpVars in enumerate(student.schedule.lpVars):
+            for period, lpVars in enumerate(student._schedule._lpVars):
                 for class_id, attending in enumerate(lpVars):
                     # get corresponding qualified teachers
                     teacher_assignment_variables = []
                     for teacher in self.teachers:
                         if teacher.getQualificationVector()[class_id] == 1:
-                            teacher_assignment_variables.append(teacher.schedule.lpVars[period][class_id])
+                            teacher_assignment_variables.append(teacher._schedule._lpVars[period][class_id])
                     c = summation(teacher_assignment_variables) >= attending
                     all_constraints.append(c)
+        """
+        Using getGlobalConstr:
+
+        allConstrs = []
+        for course in self.courses:
+            allConstrs.append(course.getGlobalConstr())
+        return allConstrs
+        """
         return all_constraints
 
     def define_global_constraints(self):
