@@ -15,13 +15,17 @@ class Teacher(Individual):
         self._qualifications = []
         self._openPeriods = []
     
-    def addQualification(self, qual: str):
+    def addQualification(self, qual: Course):
         if qual not in self._qualifications:
             self._qualifications.append(qual)
     
-    def remQualification(self, qual: str):
+    def remQualification(self, qual: Course):
         if qual in self._qualifications:
             self._qualifications.remove(qual)
+
+    def addQualifications(self, qualifications: List[Course]):
+        for q in qualifications:
+            self.addQualification(q)
     
     def addOpenPeriod(self, period: int):
         if period not in self._openPeriods:
@@ -36,7 +40,7 @@ class Teacher(Individual):
         Returns whether a teacher is qualified for a particular courseCode.
         """
         
-        return (courseCode in self.qualifications)
+        return (courseCode in self._qualifications)
     
     def getOpenPeriods(self) -> List[int]:
         """
