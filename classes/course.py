@@ -40,6 +40,9 @@ class Course:
             return self._courseCode == other._courseCode
         return False
     
+    def __repr__(self):
+        return f"Course {self._courseCode}"
+        
     def addReqStudent(self):
         """
         Adds 1 student to number who want to take the class.

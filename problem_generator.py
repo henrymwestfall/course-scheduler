@@ -36,9 +36,9 @@ class ToyProblem:
         self.teachers = self.create_blank_students()
         self.students = self.create_blank_students()
 
-        print(f"{self.pathways}\n")
-        for _ in range(5):
-            print(self.create_request_or_qualification_list)
+        #print(f"{self.pathways}\n")
+
+        print(self.create_request_or_qualification_list())
 
 
     def tag_generator(self):
@@ -88,11 +88,14 @@ class ToyProblem:
 
         for pathway in self.pathways:
             # create selection weights
-            weights = [1 / abs(index - level) for index, pathway in enumerate(pathway)]
+            weights = []
+            for index, _ in enumerate(pathway):
+                weights.append(max([3 - abs(level - index), 0]))
             sum_weights = sum(weights)
-            normalized = [w / sum_weights for w in weights]
+            weights = [w / sum_weights for w in weights]
+
             
-            course = np.random.choice(pathway, normalized)
+            course = np.random.choice(pathway, p=weights)
             course_list.append(course)
         
         return course_list
