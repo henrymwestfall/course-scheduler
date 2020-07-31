@@ -73,28 +73,21 @@ class Student(Individual):
         if removed in self._reqAll:
             self._reqAll.remove(Course)
 
-    def getReqVector(self, allCourseCodes: List[str]) -> List[int]:
+    def getReqVector(self) -> List[int]:
         """
         Returns request vector from a list of all course codes.
         """
 
         ret = []
         codes = [x.courseCode for x in self._reqAll]
-        for x in allCourseCodes:
+        allCodes = [x.courseCode for x in self._allCourses]
+        for x in allCodes:
             if x in codes:
                 ret.append(1)
             else:
                 ret.append(0)
         return ret
-    """
-    TODO: Fix or remove?
-    def getReqCheck(self):
-        Returns a generator checking if the requests all appear.
-        
-        currScheduleVals = list(self._schedule.getSections().values())
-        for course in self._reqAll:
-            yield (currScheduleVals.count(course) == self._reqAll.count(course))
-    """
+
     def getConstraints(self):
         """
         Lazily generate all constraints by calling other constraint generator
@@ -138,16 +131,16 @@ class Student(Individual):
 
         return len(list(set(reqOff) & set(actualOff)))
 
-    def getElectiveScore(self) -> int:
+    def getElectiveCost(self) -> int:
         reqElective = [c.courseCode for c in self.getReqElectives()]
-        actualScore = 0
-        for s in self._schedule.sections.keys():
-            if s.courseType == CourseType.ELECTIVE:
-                if s in self.getReqElectives():
-                    actualScore += 5
-                elif s in self._altElectives:
-                    actualScore += 1
-        return actualScore
+        for course in self._allCourses:
+            if course.courseCode in reqElective:
+                varList = []
+                for period in range(self._schedule.periods):
+                    variable = self._schedule._lpVars[period][int(course._courseCode)]
+                    varList.append(variable)
+                sumOfVariables = summation(varList)
+                yield sumOfVariables
 
     def addAltElective(self, elective: Course):
         if not elective in self._altElectives:
