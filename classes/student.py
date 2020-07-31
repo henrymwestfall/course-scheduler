@@ -134,7 +134,7 @@ class Student(Individual):
     def getElectiveCost(self) -> int:
         reqElective = [c.courseCode for c in self.getReqElectives()]
         for course in self._allCourses:
-            if course.courseCode in reqElective:
+            if course._courseCode in reqElective:
                 varList = []
                 for period in range(self._schedule.periods):
                     variable = self._schedule._lpVars[period][int(course._courseCode)]
