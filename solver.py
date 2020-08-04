@@ -7,6 +7,7 @@ from classes.teacher import Teacher
 from classes.course import *
 from classes.schedule import *
 from utils import summation
+from problem_generator import ToyProblem
 
 def tag_generator():
     tag = 0
@@ -17,7 +18,7 @@ def tag_generator():
 
 class Problem:
     def __init__(self):
-        ret = self.load_students_and_teachers_and_courses()
+        ret = self.load_toy_problem()#self.load_students_and_teachers_and_courses()
         self.students, self.teachers, self.courses = ret
         self.problem = LpProblem("Toy_Problem")
 
@@ -98,6 +99,10 @@ class Problem:
 
         return students, teachers, list(courses.values())
 
+    def load_toy_problem(self):
+        p = ToyProblem(num_teachers=25, num_students=100, num_courses=20, num_periods=8, num_pathways=5)
+        return p.students, p.teachers, p.all_courses
+
     def add_constraints_from_individuals(self):
         """
         Add constraints from constraining_students and constraining_teachers to problem.
@@ -175,6 +180,8 @@ class Problem:
                 
                 # the section already exists, so add the student/teacher there
                 individual.addToSection(existing_section)
+
+        print(individual._schedule)
 
 
 if __name__ == "__main__":

@@ -10,6 +10,8 @@ Inputs
 """
 
 import random
+
+import matplotlib.pyplot as plt
 import numpy as np
 
 from classes.teacher import Teacher
@@ -33,12 +35,17 @@ class ToyProblem:
         self.all_courses, self.pathways = self.create_courses_and_pathways()
 
         # create students and teachers
-        self.teachers = self.create_blank_students()
+        self.teachers = self.create_blank_teachers()
         self.students = self.create_blank_students()
 
-        #print(f"{self.pathways}\n")
-
-        print(self.create_request_or_qualification_list())
+        # Teachers can teach a specific pathway.
+        # students choose from all pathways.
+        for t in self.teachers:
+            quals = random.choice(self.pathways)
+            t.addQualifications(quals)
+        for s in self.students:
+            reqs = self.create_request_list()
+            s.requestAll(reqs)
 
 
     def tag_generator(self):
@@ -80,7 +87,7 @@ class ToyProblem:
     def create_blank_students(self):
         return self.create_blank_individuals(self.num_students, Student)
 
-    def create_request_or_qualification_list(self):
+    def create_request_list(self):
         course_list = []
 
         shortest_pathway_length = len(min(self.pathways, key=lambda p: len(p)))
@@ -93,11 +100,8 @@ class ToyProblem:
                 weights.append(max([3 - abs(level - index), 0]))
             sum_weights = sum(weights)
             weights = [w / sum_weights for w in weights]
-
             
             course = np.random.choice(pathway, p=weights)
             course_list.append(course)
         
         return course_list
-
-ToyProblem(3, 5, 6, 3, 2)
