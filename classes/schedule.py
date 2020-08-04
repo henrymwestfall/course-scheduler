@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING, List
 from copy import deepcopy
-from pulp import LpVariable, LpAffineExpression
+from pulp import LpVariable, LpAffineExpression, value
 import numpy as np
 from .course import CourseType, Course, Section
 if TYPE_CHECKING:
