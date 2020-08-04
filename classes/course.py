@@ -239,3 +239,11 @@ class Section:
         periodValid = (self._period != -1)
         studentsValid = (len(self._students) > 0)
         return (instructorValid and periodValid and studentsValid)
+
+    def getClassSizeConstr(self):
+        vrs = []
+        for student in self._students:
+            vrs.append(self._students._schedule._lpVars[self._period][int(self._courseCode)])
+        
+        return summation(vrs), summation(self._instructor._schedule._lpVars[self._period][int(self._courseCode)])
+        
