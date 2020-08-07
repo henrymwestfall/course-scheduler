@@ -61,9 +61,9 @@ class Teacher(Individual):
         Adds a section to the schedule.
         """
 
-        res = self.schedule.addSection(newSection)
+        res = self._schedule.addSection(newSection)
         if res:
-            self.openPeriods.remove(newSection.period)
+            self._openPeriods.remove(newSection.period)
             self.addToSection(newSection)
     
     def removeSection(self, section: Section):
@@ -71,7 +71,7 @@ class Teacher(Individual):
         Removes a section from the schedule.
         """
 
-        self.schedule.removeSection(section)
+        self._schedule.removeSection(section)
         section.instructor = None
         self.openPeriods.append(section.period)
         self.openPeriods.sort()
@@ -129,6 +129,7 @@ class Teacher(Individual):
     
     def addToSection(self, section):
         section.changeInstructor(self)
+        self._schedule.addSection(section)
     
     def getOpenScore(self) -> int:
         """

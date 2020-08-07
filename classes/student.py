@@ -127,6 +127,7 @@ class Student(Individual):
 
     def addToSection(self, section):
         section.addStudent(self)
+        self._schedule.addSection(section)
     
     def getOpenScore(self) -> int:
         """
