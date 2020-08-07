@@ -77,7 +77,7 @@ class Schedule:
         """
         Adds a section at position pos. Does not work if the period is already filled. Returns True if successfully completed.
         """
-        pos = newSection.period
+        pos = newSection._period
         if self._sections[pos]==None and newSection not in self._sections.values():
             self._sections[pos] = newSection
             return True

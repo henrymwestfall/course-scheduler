@@ -41,6 +41,7 @@ class Problem:
         print(f"Solution is {LpStatus[self.status]}")
         for section in self.existing_sections:
             print(section)
+        print(self.students[0]._schedule)
 
     def load_students_and_teachers_and_courses(self):
         """
@@ -100,7 +101,7 @@ class Problem:
         return students, teachers, list(courses.values())
 
     def load_toy_problem(self):
-        p = ToyProblem(num_teachers=25, num_students=100, num_courses=20, num_periods=8, num_pathways=5)
+        p = ToyProblem(num_teachers=24, num_students=200, num_courses=20, num_periods=8, num_pathways=2)
         return p.students, p.teachers, p.all_courses
 
     def add_constraints_from_individuals(self):
@@ -180,8 +181,6 @@ class Problem:
                 
                 # the section already exists, so add the student/teacher there
                 individual.addToSection(existing_section)
-
-        print(individual._schedule)
 
 
 if __name__ == "__main__":
