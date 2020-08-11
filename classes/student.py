@@ -79,10 +79,10 @@ class Student(Individual):
         """
 
         ret = []
-        codes = [x.courseCode for x in self._reqAll]
-        allCodes = [x.courseCode for x in self._allCourses]
-        for x in allCodes:
-            if x in codes:
+        codes = [req.courseCode for req in self._reqAll] # slower than set but less memory
+        for course in self._allCourses:
+            code = course._courseCode
+            if code in codes:
                 ret.append(1)
             else:
                 ret.append(0)
