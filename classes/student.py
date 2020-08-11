@@ -133,15 +133,24 @@ class Student(Individual):
         return len(list(set(reqOff) & set(actualOff)))
 
     def getElectiveCost(self) -> int:
+        """
+        Return an expression equal to the number of requested electives
+        in schedule.
+        """
+
+        full_expression = LpAffineExpression()
         reqElective = [c.courseCode for c in self.getReqElectives()]
         for course in self._allCourses:
             if course._courseCode in reqElective:
-                varList = []
+                varList = [] # list of Lp variables at this elective and this period
                 for period in range(self._schedule.periods):
                     variable = self._schedule._lpVars[period][int(course._courseCode)]
                     varList.append(variable)
-                sumOfVariables = summation(varList)
-                yield sumOfVariables
+                # add the sum of variables. This should be 0 or 1 because of other hard
+                # constraints. 1 is good, and since the formula minimizes, the sum should 
+                # be subtracted
+                full_expression -= summation(varList)
+        return full_expression
 
     def addAltElective(self, elective: Course):
         if not elective in self._altElectives:
