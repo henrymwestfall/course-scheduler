@@ -1,4 +1,4 @@
-from pulp import LpProblem, LpAffineExpression, LpVariable, LpConstraint, LpStatus
+from pulp import LpProblem, LpAffineExpression, LpVariable, LpConstraint, LpStatus, LpMinimize
 from scipy.cluster.vq import vq, kmeans2, whiten
 import numpy as np
 
@@ -20,7 +20,12 @@ class Problem:
     def __init__(self):
         ret = self.load_toy_problem()#self.load_students_and_teachers_and_courses()
         self.students, self.teachers, self.courses = ret
-        self.problem = LpProblem("Toy_Problem")
+        self.problem = LpProblem("Toy_Problem", LpMinimize)
+
+        # define objective function
+        for s in self.students:
+            for expression in s.getElectiveCost():
+                self.problem += expression
 
         self.existing_sections = []
 

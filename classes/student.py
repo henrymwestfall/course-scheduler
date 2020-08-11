@@ -52,13 +52,13 @@ class Student(Individual):
         """
         Get requested core Courses.
         """
-        return [c for c in self._reqAll if c.courseType == CourseType.CORE]
+        return [c for c in self._reqAll if c._courseType == CourseType.CORE]
     
     def getReqElectives(self) -> List[Course]:
         """
         Get requested elective Courses.
         """
-        return [c for c in self._reqAll if c.courseType == CourseType.ELECTIVE]
+        return [c for c in self._reqAll if c._courseType == CourseType.ELECTIVE]
     
     def getReqOff(self) -> List[Course]:
         """
@@ -138,8 +138,7 @@ class Student(Individual):
         in schedule.
         """
 
-        full_expression = LpAffineExpression()
-        reqElective = [c.courseCode for c in self.getReqElectives()]
+        reqElective = [c._courseCode for c in self.getReqElectives()]
         for course in self._allCourses:
             if course._courseCode in reqElective:
                 varList = [] # list of Lp variables at this elective and this period
@@ -149,8 +148,7 @@ class Student(Individual):
                 # add the sum of variables. This should be 0 or 1 because of other hard
                 # constraints. 1 is good, and since the formula minimizes, the sum should 
                 # be subtracted
-                full_expression -= summation(varList)
-        return full_expression
+                yield -summation(varList)
 
     def addAltElective(self, elective: Course):
         if not elective in self._altElectives:
