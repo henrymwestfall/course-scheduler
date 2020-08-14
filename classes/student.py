@@ -5,6 +5,7 @@ from .schedule import Schedule
 from .course import CourseType, Section
 from utils import summation
 from .individual import Individual
+import matplotlib.pyplot as plt
 if TYPE_CHECKING:
     from .course import Course
     
@@ -151,3 +152,19 @@ class Student(Individual):
         if elective in self._altElectives:
             self._altElectives.append(elective)
     
+    def requestFreqHist(self):
+        """
+        Returns data for creating a histogram for request frequency
+        Returns two values: number of satisfied requests, total number of requests
+        """
+        satReq = 0
+        schedSecCodes = [sec.courseCode for sec in self._schedule.getSections().values()]
+        for req in self._reqAll:
+           if req in schedSecCodes:
+               satReq += 1
+
+        reqFreqFig, reqFreqAx = plt.subplots()
+        labels = "Fulfilled", "Unfulfilled"
+        reqFreqAx.pie([satReq, len(self._reqAll) - satReq], labels=labels)
+        reqFreqAx.axis("equal")
+        plt.show()

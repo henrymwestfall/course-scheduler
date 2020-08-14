@@ -9,6 +9,7 @@ from classes.schedule import *
 from utils import summation
 from problem_generator import ToyProblem
 
+import matplotlib.pyplot as plt
 def tag_generator():
     tag = 0
     while True:
@@ -182,9 +183,32 @@ class Problem:
                 # the section already exists, so add the student/teacher there
                 individual.addToSection(existing_section)
 
+    def sectionSizeHist(self):
+        """
+        Returns data for creating a histogram for section size
+
+        Returns: Dictionary of class size to frequency.
+        """
+        
+        ret = {}
+        for sect in self.existing_sections:
+            if len(sect._students) in ret.keys():
+                ret[len(sect._students)] += 1
+            else:
+                ret[len(sect._students)] = 1
+
+        sectSizeFig, sectSizeAx = plt.subplots()
+        sectSizeAx.bar(ret.keys(), ret.values())
+        
+        sectSizeAx.set_xlabel("Class size")
+        sectSizeAx.set_ylabel("Frequency")
+        sectSizeAx.set_title("Class Size Distribution")
+        plt.show()
+        
 
 if __name__ == "__main__":
     #solve()
     p = Problem()
     p.solve()
     p.display_result()
+    p.sectionSizeHist()
