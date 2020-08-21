@@ -204,6 +204,16 @@ class Problem:
         sectSizeAx.set_ylabel("Frequency")
         sectSizeAx.set_title("Class Size Distribution")
         plt.show()
+
+    def sectSizeDev(self):
+        ret = []
+        avClass = len(self.students) / len(self.teachers)
+        for sect in self.existing_sections:
+            sectStudVariables = []
+            for stud in sect._students:
+                sectStudVariables.append(stud._schedule._lpVars[sect._period][sect._courseCode])
+            ret.append(sectStudVariables)
+        return LpAffineExpression(32*len(self.existing_sections) - summation(ret))
         
 
 if __name__ == "__main__":
