@@ -1,142 +1,184 @@
-from pulp import LpProblem, LpAffineExpression, LpVariable
+from pulp import LpProblem, LpAffineExpression, LpVariable, LpConstraint, LpStatus, LpMinimize
 from scipy.cluster.vq import vq, kmeans2, whiten
 import numpy as np
 
-from classes.individual import *
+from classes.student import Student
+from classes.teacher import Teacher
 from classes.course import *
 from classes.schedule import *
+from utils import summation
+from problem_generator import ToyProblem
+import csv_reader
+
+def tag_generator():
+    tag = 0
+    while True:
+        yield tag
+        tag += 1
 
 
-def load_students_and_teachers_and_courses():
-    """
-    Return a tuple containing a list of Teacher and Student objects.
-    This loads the courses and adds them to the objects request/qualification
-    lists.
-    """
+class Problem:
+    def __init__(self):
+        ret = self.load_toy_problem()#self.load_students_and_teachers_and_courses()
+        self.students, self.teachers, self.courses = ret
+        self.problem = LpProblem("Toy_Problem", LpMinimize)
 
-    # load the raw data
-    # TODO: load from a file of some sort
-    student_requests = [
-                    [0, 1, 3],
-                    [0, 2, 3],
-                    [0, 2, 4],
-                    [1, 3, 4],
-                    [0, 1, 2],
-                    [1, 2, 3]
-    ]
+        # define objective function
+        for s in self.students:
+            for expression in s.getElectiveCost():
+                self.problem += expression
 
-    teacher_qualifs = [
-                    [0, 1, 3],
-                    [0, 2, 4],
-                    [1, 2, 3]
-    ]
+        self.existing_sections = []
 
-    rawCourses = [(str(i), CourseType.CORE) for i in range(5)] # example course already in list
-    rawStudentRequests = {i: reqs for i, reqs in enumerate(student_requests)} # map student name to requests (strings)
-    rawStudentGrades = {i: 12 for i in range(len(student_requests))} # map student name to the grade they're in
-    rawTeacherQualifications = {i: qualifs for i, qualifs in enumerate(teacher_qualifs)} # map teacher name to qualifications (strings)
-    rawTeacherRequestedOpenPeriods = {i: 0 for i in range(len(teacher_qualifs))} # map teacher name to requested open periods
+    @property
+    def status(self):
+        return self.problem.status
 
+    def add_constraints(self):
+        self.add_constraints_from_individuals()
+        self.define_global_constraints()
 
-    # create Courses, Students, and Teachers
-    courses = {} # maps course name to object
-    for c in rawCourses:
-        courses[c[0]] = Course(*c)
+    def solve(self):
+        self.add_constraints()
+        self.problem.solve()
+        self.create_final_sections()
 
-    students = []
-    for studentName, requestList in rawStudentRequests.items():
-        student = Student(studentName, rawStudentGrades[studentName], rawCourses)
-        students.append(student)
-        student.requestAll([courses[str(c)] for c in requestList])
+    def display_result(self):
+        print(f"Solution is {LpStatus[self.status]}")
+        for section in self.existing_sections:
+            print(section)
+        print(self.students[0]._schedule)
 
-    teachers = []
-    for teacherName, qualifications in rawTeacherQualifications.items():
-        qualifications_with_course_objects = [courses[str(q)] for q in qualifications]
-        teacher = Teacher(teacherName, qualifications_with_course_objects, rawTeacherRequestedOpenPeriods[teacherName], list(courses.values()))
-        teachers.append(teacher)
+    def load_students_and_teachers_and_courses(self):
+        """
+        Return a tuple containing a list of Teacher and Student objects.
+        This loads the courses and adds them to the objects request/qualification
+        lists.
+        """
 
-    return students, teachers, list(courses.values())
-# Note: it would be nice if Teacher and Student constructors were more similar
+        # load the raw data
+        num_courses = 5
+        student_requests = csv_reader.get_request()
 
-def add_constraints_from_individuals(problem, constraining_students, constraining_teachers, all_courses):
-    """
-    add constraints from constraining_students and constraining_teachers to problem.
-    """
+        teacher_qualifs = csv_reader.get_qualifs()
 
-    for student in constraining_students:
-        for constraint in student.getConstraints(all_courses): # method not implemented yet
-            problem += constraint
-    for teacher in constraining_teachers:
-        for constraint in teacher.getConstraints(all_courses): # method not implemented yet
-            problem += constraint
+        rawCourses = [(str(i), CourseType.CORE) for i in range(num_courses)] # example course already in list
+        rawStudentRequests = {i: reqs for i, reqs in enumerate(student_requests)} # map student name to requests (strings)
+        rawStudentGrades = {i: 12 for i in range(len(student_requests))} # map student name to the grade they're in
+        rawTeacherQualifications = {i: qualifs for i, qualifs in enumerate(teacher_qualifs)} # map teacher name to qualifications (strings)
+        rawTeacherRequestedOpenPeriods = {i: 0 for i in range(len(teacher_qualifs))} # map teacher name to requested open periods
 
-def define_global_constraints(problem, students, teachers):
-    """
-    add constraints that affect multiple individuals simultaneously to problem.
-    """
+        # create tag generator
+        tg = tag_generator()
 
-    # set is ideal, but LpConstraints are unhashable
-    all_constraints = []
+        # create Courses, Students, and Teachers
+        courses = {} # maps course name to object
+        for c in rawCourses:
+            courses[c[0]] = Course(*c)
+        allCourses = list(courses.values())
 
-    for student in students:
-        for period, lpVars in student.schedule.lpVars.items():
-            for class_id, attending in enumerate(lpVars):
-                # get corresponding qualified teachers
-                teacher_assignment_variables = []
-                for teacher in teachers:
-                    if teacher.getQualificationVector()[class_id] == 1:
-                        teacher_assignment_variables.append(teacher.schedule.lpVars[period][class_id])
-                c = summation(teacher_assignment_variables) >= attending
-                all_constraints.append(c)
+        students = []
+        for index, requestList in rawStudentRequests.items():
+            student = Student(next(tg), allCourses)
+            # set student grade to rawStudentGrades[index]
+            students.append(student)
+            student.requestAll([courses[str(c)] for c in requestList])
+
+        teachers = []
+        for index, qualifications in rawTeacherQualifications.items():
+            qualifications_with_course_objects = [courses[str(q)] for q in qualifications]
+            teacher = Teacher(next(tg), allCourses)
+            teacher.addQualifications(qualifications_with_course_objects)
+            # TODO: add open period requests from rawTeacherRequestedOpenPeriods[index]
+            teachers.append(teacher)
+
+        return students, teachers, list(courses.values())
+
+    def load_toy_problem(self):
+        p = ToyProblem(num_teachers=24, num_students=200, num_courses=20, num_periods=8, num_pathways=2)
+        return p.students, p.teachers, p.all_courses
+
+    def add_constraints_from_individuals(self):
+        """
+        Add constraints from constraining_students and constraining_teachers to problem.
+        """
+
+        for student in self.students:
+            self.add_constraints_from_individual(student, "student")
+        for teacher in self.teachers:
+            self.add_constraints_from_individual(teacher, "teacher")
     
-    for c in all_constraints:
-        problem += c
+    def add_constraints_from_individual(self, individual, individual_type_string):
+        for constraint in individual.getConstraints():
+            assertion_message = f"{individual_type_string} constraint was illegal"
+            assert isinstance(constraint, LpConstraint), assertion_message
+            self.problem += constraint
 
-# create all sections locally in students
-def create_final_sections(students, teachers):
-    """
-    return a list of the final Section objects with Students and Teachers added.
-    """
+    def get_sections_need_teachers_constraints(self):
+        """
+        Define the LpConstraint ensuring that each section assigned to a student
+        has a qualified teacher assigned to it also.
+        """
 
-    # build all sections
-    allExistingSections = []
+        all_constraints = []
+        for student in self.students:
+            for period, lpVars in enumerate(student._schedule._lpVars):
+                for class_id, attending in enumerate(lpVars):
+                    # get corresponding qualified teachers
+                    teacher_assignment_variables = []
+                    for teacher in self.teachers:
+                        if teacher.getQualificationVector()[class_id] == 1:
+                            teacher_assignment_variables.append(teacher._schedule._lpVars[period][class_id])
+                    c = summation(teacher_assignment_variables) >= attending
+                    all_constraints.append(c)
+        """
+        Using getGlobalConstr:
 
-    for individual in students + teachers:
-        individual.schedule.createSections() # method not implemented yet
-        for section in individual.schedule.sections:
-            for existingSection in allExistingSections:
-                if section == existingSection:
-                    break
-            else:
-                # the section doesn't exist yet, so add it to the existing sections
-                allExistingSections.append(section)
-                continue
-            
-            # the section already exists, so add the student/teacher there
-            if isinstance(individual, Teacher):
-                existingSection.setTeacher(individual) # method not implemented yet
-            else:
-                existingSection.addStudent(individual)
-    
-    return allExistingSections
+        allConstrs = []
+        for course in self.courses:
+            allConstrs.append(course.getGlobalConstr())
+        return allConstrs
+        """
+        return all_constraints
 
-def solve():
-    """
-    The main function
-    """
+    def define_global_constraints(self):
+        """
+        Add constraints that affect multiple individuals simultaneously to problem.
+        """
 
-    students, teachers, all_courses = load_students_and_teachers_and_courses()
+        # set is ideal, but LpConstraints are unhashable
+        all_constraints = []
 
-    problem = LpProblem("Toy Problem")
-    add_constraints_from_individuals(problem, students, teachers, all_courses)
-    define_global_constraints(problem, students, teachers)
+        all_constraints += self.get_sections_need_teachers_constraints()
+        
+        for c in all_constraints:
+            assert isinstance(c, LpConstraint), "global constraint was illegal"
+            self.problem += c
 
-    status = problem.solve()
-    all_existing_sections = create_final_sections(students, teachers)
+    def create_final_sections(self):
+        """
+        Return a list of the final Section objects with Students and Teachers added.
+        """
 
-    print(f"Solution is {status}")
-    for section in all_existing_sections:
-        print(section)
+        # build all sections
+        for individual in self.students + self.teachers:
+            new_sections = individual.createSections() # method not implemented yet
+            for section in new_sections:
+                for existing_section in self.existing_sections:
+                    if section == existing_section:
+                        break
+                else:
+                    # the section doesn't exist yet, so add it to the existing sections
+                    individual.addToSection(section)
+                    self.existing_sections.append(section)
+                    continue
+                
+                # the section already exists, so add the student/teacher there
+                individual.addToSection(existing_section)
+
 
 if __name__ == "__main__":
-    solve()
+    #solve()
+    p = Problem()
+    p.solve()
+    p.display_result()
