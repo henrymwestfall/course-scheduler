@@ -43,14 +43,14 @@ def server():
         with job_lock:
             job_queue = jobs.copy()
 
-        for key, file_name in job_queue.items():
+        for email, file_name in job_queue:
             with open(file_name, "r") as f:
                 data = prepare_file(f)
 
             solver = Solver()
             solver.load_problem(data)
             solver.solve()
-            solver.save_result(f"solution_{key}") # TODO: save the result to a file
+            solver.save_result(f"solution_{key}") # TODO: save the result to a file and send it
 
             time.sleep(1)
 server_thread = Thread(target=server)
@@ -69,27 +69,29 @@ def is_safe(f):
 def index():
     return render_template("index.html")
 
-@app.route("/upload/<key>", methods=["POST"])
-def upload(key=""):
-    if not (key in used_keys):
-        return "Unknown key"
-    elif key in jobs:
-        return "Key is in use."
-
+@app.route("/upload", methods=["POST"])
+def upload():
     if request.method == "POST":
-        f = request.files["input_file"]
+        f = request.files["file"]
+        email = request.files["email"]
         if is_safe(f):
             ext = f.filename.split(".")[1]
-            name = f"/input_files/input_file_{key}.{ext}"
+            name = "/input_files/input_file_0.csv"
+            num = 1
+            while os.path.exists(name):
+                name = f"/input_files/input_file_{num}.csv"
+                num += 1
             f.save(name)
 
             with job_lock:
-                jobs[key] = name
+                jobs.append((email, name))
 
-            return render_template("upload_success.html")
+            # TODO: send them a confirmation email
+
+            return "Upload successful!"
 
     # all else fails, return to home
-    return render_template("index.html")
+    return "Upload failed!"
 
 @app.route("/get_new_key", methods=["GET"])
 def get_new_key():

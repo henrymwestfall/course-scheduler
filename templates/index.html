@@ -5,20 +5,13 @@
         <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='main.css') }}">
     </head>
     <body>
-        <script>
-            function get_api_key() {
-                return await(fetch("/get_new_key")).text()
-            }
-
-            function send_file() {
-                // TODO: send the file
-            }
-        </script>
-
         <h1>File Upload</h1>
-        <form action="/upload" method="post" enctype="multipart/form-data">
-            <input type="file" name="input_file">
-            <input type="submit" value="Upload">
+        <form enctype="multipart/form-data" action="/upload" method="post">
+            <input type="text" name="email"/>
+            <label for="email">Email</label>
+            <input type="file" name="file"/>
+            <label for="file">File</label>
+            <input type="submit" value="Submit"/>
         </form>
     </body>
 </html>
