@@ -4,6 +4,17 @@ from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
 from email import encoders
 
+def send_plaintext_email(receiver_address, text):
+    sender_address = 'coursescheduler640@gmail.com'
+    sender_pass = 'NCEu9ZxyVH6WByP'
+
+    session = smtplib.SMTP('smtp.gmail.com', 587) #use gmail with port
+    session.starttls() #enable security
+    session.login(sender_address, sender_pass) #login with mail_id and password
+    text = message.as_string()
+    session.sendmail(sender_address, receiver_address, text)
+    session.quit()
+
 def send_solution(receiver_address, attach_file_name):
     sender_address = 'coursescheduler640@gmail.com'
     sender_pass = 'NCEu9ZxyVH6WByP'

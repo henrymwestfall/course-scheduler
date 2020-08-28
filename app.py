@@ -5,7 +5,7 @@ import pickle
 from threading import Thread, Lock
 
 from flask import Flask, render_template, json, request
-from email_api import send_solution
+from email_api import send_solution, send_plaintext_email
 
 
 from solver import Solver
@@ -13,28 +13,8 @@ from solver import Solver
 # define application
 app = Flask(__name__)
 
-# TODO: remove unused api keys throughout the file
-def api_key_generator():
-    """
-    Generate unique api keys.
-    There are 536,236,100,573,742,000,000 possible keys.
-    """
-
-    while True:
-        key = ""
-        for _ in range(12):
-            choices = (random.randint(48, 57), random.randint(65, 90), random.randint(97, 122))
-            key += chr(random.choice(choices))
-        if not (key in used_keys):
-            used_keys.add(key)
-            yield key
-
-used_keys = set()
-api_keys = api_key_generator()
-
 job_lock = Lock() # create a lock on the jobs
-jobs = [] # api key to input file
-processing = False # whether the server is currently processing a job
+jobs = [] # list of (email, filename) pairs
 
 def server():
     """
@@ -77,7 +57,7 @@ def prepare_file(f):
     return f
 
 def is_safe(f):
-    # TODO: write antivirus
+    # TODO: check the file for security risks
     return True
 
 @app.route("/")
@@ -101,24 +81,12 @@ def upload():
             with job_lock:
                 jobs.append((email, name))
 
-            # TODO: send them a confirmation email
+            send_plaintext_email(email, "Hello,\nYour schedule request has been received. We will email you when the solution is ready.")
 
             return "Upload successful!"
 
-    # all else fails, return to home
     return "Upload failed!"
 
 @app.route("/get_new_key", methods=["GET"])
 def get_new_key():
     return next(api_keys)
-
-@app.route("/result/<key>")
-def get_result(key=""):
-    solutions = os.listdir("solutions")
-    for solution_file in solutions:
-        if solution_file.endswith(key):
-            break
-    else:
-        return render_template("still_processing.html")
-    
-    # TODO: send file back
