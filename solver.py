@@ -1,6 +1,7 @@
 from pulp import LpProblem, LpAffineExpression, LpVariable, LpConstraint, LpStatus, LpMinimize
 from scipy.cluster.vq import vq, kmeans2, whiten
 import numpy as np
+import matplotlib.pyplot as plt
 
 from classes.student import Student
 from classes.teacher import Teacher
@@ -17,9 +18,9 @@ def tag_generator():
         tag += 1
 
 
-class Problem:
+class Solver:
     def __init__(self):
-        ret = self.load_toy_problem()#self.load_students_and_teachers_and_courses()
+        ret = self.load_problem()#self.load_students_and_teachers_and_courses()
         self.students, self.teachers, self.courses = ret
         self.problem = LpProblem("Toy_Problem", LpMinimize)
 
@@ -94,9 +95,9 @@ class Problem:
 
         return students, teachers, list(courses.values())
 
-    def load_toy_problem(self):
-        p = ToyProblem(num_teachers=24, num_students=200, num_courses=20, num_periods=8, num_pathways=2)
-        return p.students, p.teachers, p.all_courses
+    def load_problem(self, problem):
+        # TODO: accept problems from file
+        p = ToyProblem(num_teachers=12, num_students=100, num_courses=10, num_periods=8, num_pathways=2)
 
     def add_constraints_from_individuals(self):
         """
@@ -176,9 +177,8 @@ class Problem:
                 # the section already exists, so add the student/teacher there
                 individual.addToSection(existing_section)
 
-
 if __name__ == "__main__":
     #solve()
-    p = Problem()
-    p.solve()
-    p.display_result()
+    s = Solver()
+    s.solve()
+    s.display_result()
