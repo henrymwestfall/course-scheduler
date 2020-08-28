@@ -1,15 +1,19 @@
 import os
 import random
 import time
+import pickle
 from threading import Thread, Lock
 
 from flask import Flask, render_template, json, request
+from email_api import send_solution
+
 
 from solver import Solver
 
 # define application
 app = Flask(__name__)
 
+# TODO: remove unused api keys throughout the file
 def api_key_generator():
     """
     Generate unique api keys.
@@ -28,10 +32,8 @@ def api_key_generator():
 used_keys = set()
 api_keys = api_key_generator()
 
-
 job_lock = Lock() # create a lock on the jobs
-jobs = {} # api key to input file
-finished = {} # list of api keys with finished jobs
+jobs = [] # api key to input file
 processing = False # whether the server is currently processing a job
 
 def server():
@@ -44,15 +46,28 @@ def server():
             job_queue = jobs.copy()
 
         for email, file_name in job_queue:
+            processing = True
             with open(file_name, "r") as f:
                 data = prepare_file(f)
 
             solver = Solver()
             solver.load_problem(data)
             solver.solve()
-            solver.save_result(f"solution_{key}") # TODO: save the result to a file and send it
 
+            filename = "./solutions/solution_0"
+            num = 1
+            while os.path.exists(file_name):
+                file_name f"./solutions/solution_{num}"
+                num += 1
+            solver.save_result(file_name)
+            send_solution(email, file_name)
+            processing = False
             time.sleep(1)
+        
+        with job_lock:
+            for job in job_queue:
+                jobs.remove(job)
+
 server_thread = Thread(target=server)
 server_thread.daemon = True
 server_thread.start()

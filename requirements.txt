@@ -1,3 +1,5 @@
 flask
 flask-heroku
 pulp
+smtplib
+email
