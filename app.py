@@ -61,7 +61,7 @@ while not valid:
             session.login("coursescheduler640@gmail.com", sender_pass)
             valid = True
             break
-        except SMPTAuthenticationError:
+        except SMTPAuthenticationError:
             print("Invalid password. Please try again.")
     else:
         print("You have reached the maximum number of login attempts. Try again in 10 minutes")
