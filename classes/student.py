@@ -155,7 +155,6 @@ class Student(Individual):
     def requestFreqHist(self):
         """
         Returns data for creating a histogram for request frequency
-        Returns two values: number of satisfied requests, total number of requests
         """
         satReq = 0
         schedSecCodes = [sec.courseCode for sec in self._schedule.getSections().values()]

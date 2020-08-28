@@ -206,6 +206,9 @@ class Problem:
         plt.show()
 
     def sectSizeDev(self):
+        """
+        Returns equation for measuring 
+        """
         ret = []
         avClass = len(self.students) / len(self.teachers)
         for sect in self.existing_sections:
