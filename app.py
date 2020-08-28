@@ -3,7 +3,7 @@ import random
 import time
 import pickle
 from threading import Thread, Lock
-from smtplib import SMTP, SMPTAuthenticationError
+from smtplib import SMTP, SMTPAuthenticationError
 
 from flask import Flask, render_template, json, request
 from email_api import send_solution, send_plaintext_email
@@ -38,7 +38,7 @@ def server():
             filename = "./solutions/solution_0"
             num = 1
             while os.path.exists(file_name):
-                file_name f"./solutions/solution_{num}"
+                file_name = f"./solutions/solution_{num}"
                 num += 1
             solver.save_result(file_name)
             send_solution(email, sender_pass, file_name)
@@ -51,13 +51,15 @@ def server():
 
 # login
 sender_pass = ""
-while True:
+valid = False
+while not valid:
     for i in range(5):
         sender_pass = input("Enter the password for coursescheduler640@gmail.com: ")
         session = SMTP('smtp.gmail.com', 587)
         session.starttls()
         try:
             session.login("coursescheduler640@gmail.com", sender_pass)
+            valid = True
             break
         except SMPTAuthenticationError:
             print("Invalid password. Please try again.")
