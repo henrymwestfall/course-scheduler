@@ -10,6 +10,7 @@ from classes.schedule import *
 from utils import summation
 from problem_generator import ToyProblem
 
+import matplotlib.pyplot as plt
 def tag_generator():
     tag = 0
     while True:
@@ -189,11 +190,42 @@ class Solver:
                 # the section already exists, so add the student/teacher there
                 individual.addToSection(existing_section)
 
-    def save_result(self, filename):
-        pass
+    def sectionSizeHist(self):
+        """
+        Returns data for creating a histogram for section size
+
+        Returns: Dictionary of class size to frequency.
+        """
+        
+        ret = {}
+        for sect in self.existing_sections:
+            if len(sect._students) in ret.keys():
+                ret[len(sect._students)] += 1
+            else:
+                ret[len(sect._students)] = 1
+
+        sectSizeFig, sectSizeAx = plt.subplots()
+        sectSizeAx.bar(ret.keys(), ret.values())
+        
+        sectSizeAx.set_xlabel("Class size")
+        sectSizeAx.set_ylabel("Frequency")
+        sectSizeAx.set_title("Class Size Distribution")
+        plt.show()
+
+    def sectSizeDev(self):
+        ret = []
+        avClass = len(self.students) / len(self.teachers)
+        for sect in self.existing_sections:
+            sectStudVariables = []
+            for stud in sect._students:
+                sectStudVariables.append(stud._schedule._lpVars[sect._period][sect._courseCode])
+            ret.append(sectStudVariables)
+        return LpAffineExpression(32*len(self.existing_sections) - summation(ret))
+        
 
 if __name__ == "__main__":
     #solve()
-    s = Solver()
-    s.solve()
-    s.display_result()
+    solver = Solver()
+    solver.solve()
+    solver.display_result()
+    solver.sectionSizeHist()
