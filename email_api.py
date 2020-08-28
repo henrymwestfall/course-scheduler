@@ -4,9 +4,8 @@ from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
 from email import encoders
 
-def send_plaintext_email(receiver_address, text):
+def send_plaintext_email(receiver_address, sender_pass, text):
     sender_address = 'coursescheduler640@gmail.com'
-    sender_pass = 'NCEu9ZxyVH6WByP'
 
     session = smtplib.SMTP('smtp.gmail.com', 587) #use gmail with port
     session.starttls() #enable security
@@ -15,9 +14,8 @@ def send_plaintext_email(receiver_address, text):
     session.sendmail(sender_address, receiver_address, text)
     session.quit()
 
-def send_solution(receiver_address, attach_file_name):
+def send_solution(receiver_address, sender_pass, attach_file_name):
     sender_address = 'coursescheduler640@gmail.com'
-    sender_pass = 'NCEu9ZxyVH6WByP'
 
     message = MIMEMultipart()
     message['From'] = sender_address

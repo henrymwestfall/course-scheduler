@@ -3,6 +3,7 @@ import random
 import time
 import pickle
 from threading import Thread, Lock
+from smtplib import SMTP, SMPTAuthenticationError
 
 from flask import Flask, render_template, json, request
 from email_api import send_solution, send_plaintext_email
@@ -40,7 +41,7 @@ def server():
                 file_name f"./solutions/solution_{num}"
                 num += 1
             solver.save_result(file_name)
-            send_solution(email, file_name)
+            send_solution(email, sender_pass, file_name)
             processing = False
             time.sleep(1)
         
@@ -48,9 +49,26 @@ def server():
             for job in job_queue:
                 jobs.remove(job)
 
+# login
+sender_pass = ""
+while True:
+    for i in range(5):
+        sender_pass = input("Enter the password for coursescheduler640@gmail.com: ")
+        session = SMTP('smtp.gmail.com', 587)
+        session.starttls()
+        try:
+            session.login("coursescheduler640@gmail.com", sender_pass)
+            break
+        except SMPTAuthenticationError:
+            print("Invalid password. Please try again.")
+    else:
+        print("You have reached the maximum number of login attempts. Try again in 10 minutes")
+        time.sleep(600)
+
 server_thread = Thread(target=server)
 server_thread.daemon = True
 server_thread.start()
+
 
 def prepare_file(f):
     # TODO: prepare the file for the solver
@@ -81,7 +99,7 @@ def upload():
             with job_lock:
                 jobs.append((email, name))
 
-            send_plaintext_email(email, "Hello,\nYour schedule request has been received. We will email you when the solution is ready.")
+            send_plaintext_email(email, sender_pass, "Hello,\nYour schedule request has been received. We will email you when the solution is ready.")
 
             return "Upload successful!"
 
