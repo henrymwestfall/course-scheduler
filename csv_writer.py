@@ -4,7 +4,7 @@ def write_file(raw_results):
     ordered_results = []
     for i in raw_results:
         ordered_results.append([i["Name"], i[1], i[2], i[3], i[4], i[5], i[6], i[7], i[8]])
-    header = ["Name", "Period 1", "Period 2", "Period 3", "Period 4", "Period 5", "Period 6", "Period 7", "Period 8"]
+    header = ["Student Name", "Period 1 Course Code", "Period 2 Course Code", "Period 3 Course Code", "Period 4 Course Code", "Period 5 Course Code", "Period 6 Course Code", "Period 7 Course Code", "Period 8 Course Code"]
 
     filename = "Output.csv"
 
