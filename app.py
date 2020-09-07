@@ -64,7 +64,7 @@ while not valid:
         except SMTPAuthenticationError:
             print("Invalid password. Please try again.")
     else:
-        print("You have reached the maximum number of login attempts. Try again in 10 minutes")
+        print("You have reached the maximum number of login attempts. Try again after 10 minutes")
         time.sleep(600)
 
 server_thread = Thread(target=server)
