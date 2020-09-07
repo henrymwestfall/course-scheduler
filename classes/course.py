@@ -137,6 +137,7 @@ class Section:
         self._students = []
 
     def __str__(self) -> str:
+        # Returns a (somewhat) nicer representation of the section listing the information under the structure
         """
         Return string representation of Section
         """
