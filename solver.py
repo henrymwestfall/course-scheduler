@@ -1,6 +1,7 @@
 from pulp import LpProblem, LpAffineExpression, LpVariable, LpConstraint, LpStatus, LpMinimize
 from scipy.cluster.vq import vq, kmeans2, whiten
 import numpy as np
+import matplotlib.pyplot as plt
 
 from classes.student import Student
 from classes.teacher import Teacher
@@ -9,7 +10,9 @@ from classes.schedule import *
 from utils import summation
 from problem_generator import ToyProblem
 import csv_reader
+import csv_writer
 
+import matplotlib.pyplot as plt
 def tag_generator():
     tag = 0
     while True:
@@ -17,8 +20,9 @@ def tag_generator():
         tag += 1
 
 
-class Problem:
+class Solver:
     def __init__(self):
+        self.name_list = []
         ret = self.load_students_and_teachers_and_courses()
         self.students, self.teachers, self.courses = ret
         self.problem = LpProblem("Toy_Problem", LpMinimize)
@@ -45,9 +49,20 @@ class Problem:
 
     def display_result(self):
         print(f"Solution is {LpStatus[self.status]}")
-        for section in self.existing_sections:
-            print(section)
-        print(self.students[0]._schedule)
+        # for section in self.existing_sections:
+        #     print(section)
+        # print(self.students[0]._schedule)
+        new_dict = []
+        for index, student in enumerate(self.students):
+            student_dict = student._schedule._sections
+            new_dict.append(student._schedule._sections)
+            for i in student._schedule._sections:
+                if student._schedule._sections[i] != None:
+                    new_dict[index][i] = self.students[index]._schedule._sections[i].code
+        for index, i in enumerate(new_dict):
+            i["Name"] = self.name_list[index]
+        csv_writer.write_file(new_dict)
+
 
     def load_students_and_teachers_and_courses(self):
         """
@@ -57,8 +72,9 @@ class Problem:
         """
 
         # load the raw data
+        # TODO: load from a file of some sort
         num_courses = 5
-        student_requests = csv_reader.get_request()
+        student_requests, self.name_list = csv_reader.get_request()
 
         teacher_qualifs = csv_reader.get_qualifs()
 
@@ -94,8 +110,9 @@ class Problem:
 
         return students, teachers, list(courses.values())
 
-    def load_toy_problem(self):
-        p = ToyProblem(num_teachers=24, num_students=200, num_courses=20, num_periods=8, num_pathways=2)
+    def load_problem(self):
+        # TODO: accept problems from file
+        p = ToyProblem(num_teachers=12, num_students=100, num_courses=10, num_periods=8, num_pathways=2)
         return p.students, p.teachers, p.all_courses
 
     def add_constraints_from_individuals(self):
@@ -175,10 +192,54 @@ class Problem:
                 
                 # the section already exists, so add the student/teacher there
                 individual.addToSection(existing_section)
+        # set section codes
+        section_counts_per_course = {}
+        for section in self.existing_sections:
+            if not (section._courseCode in section_counts_per_course):
+                section_counts_per_course[section._courseCode] = 0
+            section_counts_per_course[section._courseCode] += 1
+            section_number = section_counts_per_course[section._courseCode]
+            section.code = f"{section._courseCode}-{section_number}"
 
+    def sectionSizeHist(self):
+        """
+        Returns data for creating a histogram for section size
+
+        Returns: Dictionary of class size to frequency.
+        """
+        
+        ret = {}
+        for sect in self.existing_sections:
+            if len(sect._students) in ret.keys():
+                ret[len(sect._students)] += 1
+            else:
+                ret[len(sect._students)] = 1
+
+        sectSizeFig, sectSizeAx = plt.subplots()
+        sectSizeAx.bar(ret.keys(), ret.values())
+        
+        sectSizeAx.set_xlabel("Class size")
+        sectSizeAx.set_ylabel("Frequency")
+        sectSizeAx.set_title("Class Size Distribution")
+        plt.show()
+
+    def sectSizeDev(self):
+        """
+        Returns equation for measuring 
+        """
+        ret = []
+        avClass = len(self.students) / len(self.teachers)
+        for sect in self.existing_sections:
+            sectStudVariables = []
+            for stud in sect._students:
+                sectStudVariables.append(stud._schedule._lpVars[sect._period][sect._courseCode])
+            ret.append(sectStudVariables)
+        return LpAffineExpression(32*len(self.existing_sections) - summation(ret))
+        
 
 if __name__ == "__main__":
     #solve()
-    p = Problem()
-    p.solve()
-    p.display_result()
+    solver = Solver()
+    solver.solve()
+    solver.display_result()
+    solver.sectionSizeHist()
