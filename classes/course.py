@@ -127,10 +127,11 @@ class Course:
 
 
 class Section:
-    __slots__ = ["_courseCode", "_courseType", "_instructor", "_period", "_students"]
+    __slots__ = ["_courseCode", "_courseType", "_instructor", "_period", "_students", "code"]
     def __init__(self, courseCode: str, courseType: CourseType):
         self._courseCode = courseCode
         self._courseType = courseType
+        self.code = ""
         self._instructor = None
         self._period = -1
         self._students = []
@@ -139,7 +140,7 @@ class Section:
         """
         Return string representation of Section
         """
-        ret = f"CourseCode: {self._courseCode}"
+        ret = f"Section {self.code}"
         ret += f"\n\tof type: {self._courseType.name}"
         ret += f"\n\twith teacher: {self._instructor._tag}"
         ret += f"\n\tin period: {self._period}"

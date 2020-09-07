@@ -107,7 +107,7 @@ class Solver:
 
         return students, teachers, list(courses.values())
 
-    def load_problem(self, problem):
+    def load_problem(self):
         # TODO: accept problems from file
         p = ToyProblem(num_teachers=12, num_students=100, num_courses=10, num_periods=8, num_pathways=2)
         return p.students, p.teachers, p.all_courses
@@ -189,6 +189,14 @@ class Solver:
                 
                 # the section already exists, so add the student/teacher there
                 individual.addToSection(existing_section)
+        # set section codes
+        section_counts_per_course = {}
+        for section in self.existing_sections:
+            if not (section._courseCode in section_counts_per_course):
+                section_counts_per_course[section._courseCode] = 0
+            section_counts_per_course[section._courseCode] += 1
+            section_number = section_counts_per_course[section._courseCode]
+            section.code = f"{section._courseCode}-{section_number}"
 
     def sectionSizeHist(self):
         """
