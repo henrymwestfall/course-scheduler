@@ -1,8 +1,8 @@
 import csv
 import Download_File
 
-Download_File.download()
-
+def get_download():
+    Download_File.download()
 def get_request():
     request_list = []
     name_list = []
