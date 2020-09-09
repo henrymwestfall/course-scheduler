@@ -9,6 +9,8 @@ from classes.course import *
 from classes.schedule import *
 from utils import summation
 from problem_generator import ToyProblem
+import csv_reader
+import csv_writer
 
 import matplotlib.pyplot as plt
 def tag_generator():
@@ -20,7 +22,8 @@ def tag_generator():
 
 class Solver:
     def __init__(self):
-        ret = self.load_problem()#self.load_students_and_teachers_and_courses()
+        self.name_list = []
+        ret = self.load_students_and_teachers_and_courses()
         self.students, self.teachers, self.courses = ret
         self.problem = LpProblem("Toy_Problem", LpMinimize)
 
@@ -46,9 +49,20 @@ class Solver:
 
     def display_result(self):
         print(f"Solution is {LpStatus[self.status]}")
-        for section in self.existing_sections:
-            print(section)
-        print(self.students[0]._schedule)
+        # for section in self.existing_sections:
+        #     print(section)
+        # print(self.students[0]._schedule)
+        new_dict = []
+        for index, student in enumerate(self.students):
+            student_dict = student._schedule._sections
+            new_dict.append(student._schedule._sections)
+            for i in student._schedule._sections:
+                if student._schedule._sections[i] != None:
+                    new_dict[index][i] = self.students[index]._schedule._sections[i].code
+        for index, i in enumerate(new_dict):
+            i["Name"] = self.name_list[index]
+        csv_writer.write_file(new_dict)
+
 
     def load_students_and_teachers_and_courses(self):
         """
@@ -60,20 +74,9 @@ class Solver:
         # load the raw data
         # TODO: load from a file of some sort
         num_courses = 5
-        student_requests = [
-                        [0, 1, 3],
-                        [0, 2, 3],
-                        [0, 2, 4],
-                        [1, 3, 4],
-                        [0, 1, 2],
-                        [1, 2, 3]
-        ]
+        student_requests, self.name_list = csv_reader.get_request()
 
-        teacher_qualifs = [
-                        [0, 1, 3],
-                        [0, 2, 4],
-                        [1, 2, 3]
-        ]
+        teacher_qualifs = csv_reader.get_qualifs()
 
         rawCourses = [(str(i), CourseType.CORE) for i in range(num_courses)] # example course already in list
         rawStudentRequests = {i: reqs for i, reqs in enumerate(student_requests)} # map student name to requests (strings)
