@@ -64,7 +64,7 @@ class Solver:
         csv_writer.write_file(new_dict)
 
 
-    def load_students_and_teachers_and_courses(self):
+    def load_students_and_teachers_and_courses(self, download = True):
         """
         Return a tuple containing a list of Teacher and Student objects.
         This loads the courses and adds them to the objects request/qualification
@@ -74,6 +74,8 @@ class Solver:
         # load the raw data
         # TODO: load from a file of some sort
         num_courses = 5
+        if download == True:
+            csv_reader.get_download()
         student_requests, self.name_list = csv_reader.get_request()
 
         teacher_qualifs = csv_reader.get_qualifs()
