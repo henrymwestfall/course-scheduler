@@ -1,7 +1,7 @@
 # course-scheduler
 
-Run `python3 solver.py` to solve.
+To run the web application locally, run `flask run` and navigate to `localhost:5000`.
 
-Python 3 module requirements: matplotlib, pulp, scipy, numpy
+Dependencies for web application: `flask`, `pulp`, `pyrebase`, `numpy`, `matplotlib`, `scipy`
 
-Link to website used to submit course requests: https://course-scheduler.github.io/
+Link to website used to submit course requests: N/A
