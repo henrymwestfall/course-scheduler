@@ -2,6 +2,7 @@ import os
 import random
 import time
 import pickle
+from zipfile import ZipFile
 from threading import Thread, Lock
 from smtplib import SMTP, SMTPAuthenticationError
 
@@ -15,6 +16,7 @@ from solver import Solver
 app = Flask(__name__)
 
 job_lock = Lock() # create a lock on the jobs
+tempfile_lock = Lock() # create a lock on temporary files
 jobs = [] # list of (email, filename) pairs
 
 def server():
@@ -28,11 +30,10 @@ def server():
 
         for email, file_name in job_queue:
             processing = True
-            with open(file_name, "r") as f:
-                data = prepare_file(f)
 
-            solver = Solver()
-            solver.load_problem(data)
+            with tempfile_lock:
+                zf_obj = ZipFile(file_name)
+                solver = Solver(zf_obj)
             solver.solve()
 
             filename = "./solutions/solution_0"
@@ -40,7 +41,7 @@ def server():
             while os.path.exists(file_name):
                 file_name = f"./solutions/solution_{num}"
                 num += 1
-            solver.save_result(file_name)
+            solver.save(file_name)
             send_solution(email, sender_pass, file_name)
             processing = False
             time.sleep(1)
@@ -71,11 +72,6 @@ server_thread = Thread(target=server)
 server_thread.daemon = True
 server_thread.start()
 
-
-def prepare_file(f):
-    # TODO: prepare the file for the solver
-    return f
-
 def is_safe(f):
     # TODO: check the file for security risks
     return True
@@ -84,24 +80,38 @@ def is_safe(f):
 def index():
     return render_template("index.html")
 
-@app.route("/upload", methods=["POST"])
+@app.route("/upload", methods=["GET", "POST"])
 def upload():
     if request.method == "POST":
-        f = request.files["file"]
-        email = request.files["email"]
-        if is_safe(f):
-            ext = f.filename.split(".")[1]
-            name = "/input_files/input_file_0.csv"
+        student_requests_file = request.files["student-requests"]
+        teacher_qualifs_file = request.files["teacher-qualifs"]
+        email = request.form["email"]
+        if is_safe(student_requests_file) and is_safe(teacher_qualifs_file):
+            name = "input_files/input_file_0.zip"
             num = 1
             while os.path.exists(name):
-                name = f"/input_files/input_file_{num}.csv"
+                name = f"input_files/input_file_{num}.zip"
                 num += 1
-            f.save(name)
+            
+            # create zip files from temporary files
+            with tempfile_lock:
+                with open("temporary_files/requests.csv", "wb") as trf:
+                    trf.write(student_requests_file.read())
+                with open("temporary_files/qualifications.csv", "wb") as tqf:
+                    tqf.write(teacher_qualifs_file.read())
+                with ZipFile(name, "w") as zf:
+                    zf.write("temporary_files/requests.csv")
+                    zf.write("temporary_files/qualifications.csv")
 
             with job_lock:
                 jobs.append((email, name))
 
-            send_plaintext_email(email, sender_pass, "Hello,\nYour schedule request has been received. We will email you when the solution is ready.")
+            text = f"""Subject: Upload Success\n
+            Hello,
+
+            Your schedule request has been received. We will send you another email when the solution is ready.
+            """
+            send_plaintext_email(email, sender_pass, text)
 
             return "Upload successful!"
 

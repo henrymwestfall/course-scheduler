@@ -10,7 +10,6 @@ def send_plaintext_email(receiver_address, sender_pass, text):
     session = smtplib.SMTP('smtp.gmail.com', 587) #use gmail with port
     session.starttls() #enable security
     session.login(sender_address, sender_pass) #login with mail_id and password
-    text = message.as_string()
     session.sendmail(sender_address, receiver_address, text)
     session.quit()
 
@@ -21,9 +20,7 @@ def send_solution(receiver_address, sender_pass, attach_file_name):
     message['From'] = sender_address
     message['To'] = receiver_address
     message['Subject'] = "Your Schedules Are Ready!"
-    mail_content = '''Hello,
-    Your schedules are ready! Download the attached CSV file.
-    '''
+    mail_content = 'Hello,\n\nYour schedules are ready! Download the attached CSV file.'
 
     message.attach(MIMEText(mail_content, 'plain'))
     payload = MIMEBase('application', 'octate-stream')

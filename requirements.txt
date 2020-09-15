@@ -3,3 +3,4 @@ flask-heroku
 pulp
 smtplib
 email
+pyrebase

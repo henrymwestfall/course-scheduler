@@ -21,9 +21,9 @@ def tag_generator():
 
 
 class Solver:
-    def __init__(self):
+    def __init__(self, zipfile_path):
         self.name_list = []
-        ret = self.load_students_and_teachers_and_courses()
+        ret = self.load_students_and_teachers_and_courses(zipfile_path)
         self.students, self.teachers, self.courses = ret
         self.problem = LpProblem("Toy_Problem", LpMinimize)
 
@@ -46,9 +46,9 @@ class Solver:
         self.add_constraints()
         self.problem.solve()
         self.create_final_sections()
-
-    def display_result(self):
         print(f"Solution is {LpStatus[self.status]}")
+
+    def save(self, path):
         # for section in self.existing_sections:
         #     print(section)
         # print(self.students[0]._schedule)
@@ -61,10 +61,9 @@ class Solver:
                     new_dict[index][i] = self.students[index]._schedule._sections[i].code
         for index, i in enumerate(new_dict):
             i["Name"] = self.name_list[index]
-        csv_writer.write_file(new_dict)
+        csv_writer.write_file(path, new_dict)
 
-
-    def load_students_and_teachers_and_courses(self, download = True):
+    def load_students_and_teachers_and_courses(self, zf_obj, download_fb=False):
         """
         Return a tuple containing a list of Teacher and Student objects.
         This loads the courses and adds them to the objects request/qualification
@@ -74,11 +73,8 @@ class Solver:
         # load the raw data
         # TODO: load from a file of some sort
         num_courses = 5
-        if download == True:
-            csv_reader.get_download()
-        student_requests, self.name_list = csv_reader.get_request()
-
-        teacher_qualifs = csv_reader.get_qualifs()
+        student_requests, self.name_list = csv_reader.get_request(zf_obj)
+        teacher_qualifs, _ = csv_reader.get_qualifs(zf_obj) # TODO: handle teacher names
 
         rawCourses = [(str(i), CourseType.CORE) for i in range(num_courses)] # example course already in list
         rawStudentRequests = {i: reqs for i, reqs in enumerate(student_requests)} # map student name to requests (strings)
